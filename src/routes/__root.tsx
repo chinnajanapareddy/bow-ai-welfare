@@ -199,25 +199,25 @@ function SiteChrome({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-bow-ivory text-foreground">
       <WelcomeScreen />
-      <header className="sticky top-0 z-50 border-b border-bow-brown/15 bg-bow-ivory/95 backdrop-blur-md shadow-2xs transition-all duration-300">
-        <div className="mx-auto flex h-[80px] max-w-[1400px] items-center justify-between px-4 sm:px-8">
+      <header className="sticky top-0 z-50 border-b border-border/60 bg-bow-ivory/95 backdrop-blur-md transition-all duration-300">
+        <div className="mx-auto flex h-[68px] max-w-[1400px] items-center justify-between px-4 sm:px-8">
           <BowLogo />
-          <nav className="hidden items-center gap-1.5 lg:flex bg-bow-sand/50 p-1.5 rounded-full border border-bow-brown/15 shadow-2xs">
+          <nav className="hidden items-center gap-1 xl:gap-1.5 lg:flex">
             {navItems.map(({ label, href, icon: Icon, alert }) => (
               <Link
                 key={href}
                 to={href}
-                className="group relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-muted-foreground transition-all duration-300 hover:text-bow-forest hover:bg-bow-sand hover:-translate-y-0.5 active:scale-95 cursor-pointer"
+                className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-foreground/75 transition-all duration-200 hover:text-foreground hover:bg-bow-sand/60 cursor-pointer"
                 activeProps={{
                   className:
-                    "bg-bow-forest text-primary-foreground font-bold shadow-xs hover:text-primary-foreground hover:bg-bow-forest scale-105 transition-all duration-300",
+                    "bg-bow-forest text-primary-foreground font-bold shadow-2xs hover:text-primary-foreground hover:bg-bow-forest scale-102 transition-all duration-200",
                 }}
               >
                 {({ isActive }) => (
                   <>
                     <Icon
-                      className={`h-3.5 w-3.5 transition-transform duration-300 group-hover:scale-125 ${
-                        isActive ? "text-amber-300 animate-pulse" : "text-bow-brown group-hover:text-bow-forest"
+                      className={`h-3.5 w-3.5 transition-transform duration-200 group-hover:scale-110 ${
+                        isActive ? "text-amber-300" : "text-bow-brown group-hover:text-bow-forest"
                       }`}
                     />
                     <span>{label}</span>
@@ -228,7 +228,7 @@ function SiteChrome({ children }: { children: ReactNode }) {
                       </span>
                     )}
                     {isActive && (
-                      <span className="ml-0.5 text-[0.68rem] animate-bounce">🐾</span>
+                      <span className="ml-0.5 text-[0.65rem]">🐾</span>
                     )}
                   </>
                 )}
