@@ -14,6 +14,7 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as AdoptRouteImport } from './routes/adopt'
 import { Route as CommunityRouteImport } from './routes/community'
 import { Route as DonateRouteImport } from './routes/donate'
+import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ReportRouteImport } from './routes/report'
@@ -43,6 +44,11 @@ const CommunityRoute = CommunityRouteImport.update({
 const DonateRoute = DonateRouteImport.update({
   id: '/donate',
   path: '/donate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LeaderboardRoute = LeaderboardRouteImport.update({
+  id: '/leaderboard',
+  path: '/leaderboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -77,6 +83,7 @@ export interface FileRoutesByFullPath {
   '/adopt': typeof AdoptRoute
   '/community': typeof CommunityRoute
   '/donate': typeof DonateRoute
+  '/leaderboard': typeof LeaderboardRoute
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
   '/report': typeof ReportRoute
@@ -89,6 +96,7 @@ export interface FileRoutesByTo {
   '/adopt': typeof AdoptRoute
   '/community': typeof CommunityRoute
   '/donate': typeof DonateRoute
+  '/leaderboard': typeof LeaderboardRoute
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
   '/report': typeof ReportRoute
@@ -102,6 +110,7 @@ export interface FileRoutesById {
   '/adopt': typeof AdoptRoute
   '/community': typeof CommunityRoute
   '/donate': typeof DonateRoute
+  '/leaderboard': typeof LeaderboardRoute
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
   '/report': typeof ReportRoute
@@ -116,6 +125,7 @@ export interface FileRouteTypes {
     | '/adopt'
     | '/community'
     | '/donate'
+    | '/leaderboard'
     | '/login'
     | '/profile'
     | '/report'
@@ -128,6 +138,7 @@ export interface FileRouteTypes {
     | '/adopt'
     | '/community'
     | '/donate'
+    | '/leaderboard'
     | '/login'
     | '/profile'
     | '/report'
@@ -140,6 +151,7 @@ export interface FileRouteTypes {
     | '/adopt'
     | '/community'
     | '/donate'
+    | '/leaderboard'
     | '/login'
     | '/profile'
     | '/report'
@@ -153,6 +165,7 @@ export interface RootRouteChildren {
   AdoptRoute: typeof AdoptRoute
   CommunityRoute: typeof CommunityRoute
   DonateRoute: typeof DonateRoute
+  LeaderboardRoute: typeof LeaderboardRoute
   LoginRoute: typeof LoginRoute
   ProfileRoute: typeof ProfileRoute
   ReportRoute: typeof ReportRoute
@@ -195,6 +208,13 @@ declare module '@tanstack/react-router' {
       path: '/donate'
       fullPath: '/donate'
       preLoaderRoute: typeof DonateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/leaderboard': {
+      id: '/leaderboard'
+      path: '/leaderboard'
+      fullPath: '/leaderboard'
+      preLoaderRoute: typeof LeaderboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -241,6 +261,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdoptRoute: AdoptRoute,
   CommunityRoute: CommunityRoute,
   DonateRoute: DonateRoute,
+  LeaderboardRoute: LeaderboardRoute,
   LoginRoute: LoginRoute,
   ProfileRoute: ProfileRoute,
   ReportRoute: ReportRoute,

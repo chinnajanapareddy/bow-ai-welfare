@@ -17,7 +17,7 @@ import { BowLogo } from "../components/bow-ui";
 import { WelcomeScreen } from "../components/bow-welcome";
 import { FloatingPaws } from "../components/bow-pet-animations";
 import { Button } from "../components/ui/button";
-import { Activity, Bone, CircleHelp, Heart, Menu, PawPrint, ShieldAlert, Users, X } from "lucide-react";
+import { Activity, Bone, CircleHelp, Heart, Menu, PawPrint, ShieldAlert, Trophy, Users, X } from "lucide-react";
 
 function NotFoundComponent() {
   return (
@@ -192,6 +192,7 @@ function SiteChrome({ children }: { children: ReactNode }) {
     { label: "My Reported Dogs", href: "/profile", icon: PawPrint },
     { label: "Adopt", href: "/adopt", icon: Heart },
     { label: "Community", href: "/community", icon: Users },
+    { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
     { label: "Donate", href: "/donate", icon: Bone },
   ];
 

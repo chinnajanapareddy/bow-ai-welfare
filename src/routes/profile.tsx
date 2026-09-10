@@ -220,8 +220,13 @@ function Profile() {
 
             <div>
               <SectionHeading
-                eyebrow="Verified Badges"
+                eyebrow="Verified Badges & Leaderboard"
                 title="Community Standing & Achievements"
+                action={
+                  <Button asChild className="bg-bow-brown hover:bg-bow-brown/90 text-white text-xs font-semibold">
+                    <Link to="/leaderboard">View Leaderboard & Ranks 🏆</Link>
+                  </Button>
+                }
               />
               <div className="mt-6 grid gap-3 sm:grid-cols-3">
                 {profile.badges.map(({ title, text, icon }) => {
