@@ -197,13 +197,13 @@ async function getGeminiInsight({
   location?: string;
   imageDataUrl?: string;
 }): Promise<AiReportInsight | null> {
-  const apiKey = process.env["GEMINI_API_KEY"];
+  const apiKey = process.env["GEMINI_API_KEY"]?.trim();
   if (!apiKey) {
     return null;
   }
 
   const models = Array.from(
-    new Set([process.env["GEMINI_MODEL"], "gemini-3.5-flash-lite", "gemini-flash-lite-latest"].filter(Boolean))
+    new Set([process.env["GEMINI_MODEL"]?.trim(), "gemini-3.5-flash-lite", "gemini-flash-lite-latest"].filter(Boolean))
   ) as string[];
 
   for (const model of models) {
@@ -294,7 +294,7 @@ async function getOpenAiInsight({
   location?: string;
   imageDataUrl?: string;
 }): Promise<AiReportInsight | null> {
-  const apiKey = process.env["OPENAI_API_KEY"];
+  const apiKey = process.env["OPENAI_API_KEY"]?.trim();
   if (!apiKey) {
     return null;
   }
@@ -384,13 +384,13 @@ async function getGroqInsight({
   location?: string;
   imageDataUrl?: string;
 }): Promise<AiReportInsight | null> {
-  const apiKey = process.env["GROQ_API_KEY"];
+  const apiKey = process.env["GROQ_API_KEY"]?.trim();
   if (!apiKey) {
     return null;
   }
 
   const models = Array.from(
-    new Set([process.env["GROQ_MODEL"], "groq/compound-mini", "openai/gpt-oss-20b", "groq/compound"].filter(Boolean))
+    new Set([process.env["GROQ_MODEL"]?.trim(), "groq/compound-mini", "openai/gpt-oss-20b", "groq/compound"].filter(Boolean))
   ) as string[];
 
   for (const model of models) {
@@ -449,58 +449,68 @@ export async function generateDogDescription({
   }
 
   if (imageDataUrl && imageDataUrl.length > 50) {
-    const apiKey = process.env["GEMINI_API_KEY"];
+    let mimeType = "image/jpeg";
+    let base64Data = imageDataUrl;
+    const commaIndex = imageDataUrl.indexOf(",");
+    if (commaIndex !== -1) {
+      const header = imageDataUrl.slice(0, commaIndex);
+      base64Data = imageDataUrl.slice(commaIndex + 1).replace(/[\r\n\s]/g, "");
+      const mimeMatch = header.match(/data:(image\/[a-zA-Z0-9\-\+\.]+);/);
+      if (mimeMatch && mimeMatch[1]) {
+        mimeType = mimeMatch[1];
+      }
+    }
+
+    const apiKey = process.env["GEMINI_API_KEY"]?.trim();
     if (apiKey) {
       const models = Array.from(
-        new Set([process.env["GEMINI_MODEL"], "gemini-3.5-flash-lite", "gemini-flash-lite-latest"].filter(Boolean))
+        new Set([process.env["GEMINI_MODEL"]?.trim(), "gemini-3.5-flash-lite", "gemini-flash-lite-latest"].filter(Boolean))
       ) as string[];
 
       for (const model of models) {
         try {
           const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-          const parts: Array<Record<string, unknown>> = [
-            {
-              text: "Examine the DOG in this photo carefully. Describe what you observe in 2 clear sentences detailing coat color, posture, visible physical condition, and immediate needs.",
+          const response = await fetch(url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
             },
-          ];
-
-          const match = imageDataUrl.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
-          if (match) {
-            parts.push({
-              inlineData: {
-                mimeType: match[1],
-                data: match[2],
+            body: JSON.stringify({
+              systemInstruction: {
+                parts: [
+                  {
+                    text: "You are BOW AI, an emergency welfare visual analyst for street dogs. Describe what you see in the photo in 2 clear sentences detailing coat color, posture, visible physical condition, and surroundings.",
+                  },
+                ],
               },
-            });
-
-            const response = await fetch(url, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                systemInstruction: {
+              contents: [
+                {
                   parts: [
                     {
-                      text: "You are BOW AI, an emergency welfare visual analyst for street dogs. Describe what you see in the photo in 2 clear sentences detailing coat color, posture, visible physical condition, and surroundings.",
+                      text: "Examine the dog in this photo carefully. Describe what you observe in 2 clear sentences detailing coat color, posture, visible physical condition, and immediate needs.",
+                    },
+                    {
+                      inlineData: {
+                        mimeType,
+                        data: base64Data,
+                      },
                     },
                   ],
                 },
-                contents: [{ parts }],
-                generationConfig: {
-                  temperature: 0.1,
-                  maxOutputTokens: 500,
-                },
-              }),
-            });
+              ],
+              generationConfig: {
+                temperature: 0.1,
+                maxOutputTokens: 500,
+              },
+            }),
+          });
 
-            if (response.ok) {
-              const data = await response.json();
-              const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-              if (text && text.trim().length > 10) {
-                return { description: text.trim() };
-              }
+          if (response.ok) {
+            const data = await response.json();
+            const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text && text.trim().length > 10) {
+              return { description: text.trim() };
             }
           }
         } catch (error) {
@@ -509,8 +519,86 @@ export async function generateDogDescription({
       }
     }
 
+    const groqKey = process.env["GROQ_API_KEY"];
+    if (groqKey) {
+      try {
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${groqKey}`,
+          },
+          body: JSON.stringify({
+            model: process.env["GROQ_MODEL"] ?? "groq/compound-mini",
+            temperature: 0.1,
+            messages: [
+              {
+                role: "system",
+                content: "You are BOW AI visual analyst. Describe the street dog in the photo in 2 concise sentences detailing physical condition and posture.",
+              },
+              {
+                role: "user",
+                content: [
+                  { type: "text", text: "Examine the dog in this image carefully. Describe posture, visible condition, and coat color in 2 sentences." },
+                  { type: "image_url", image_url: { url: imageDataUrl } },
+                ],
+              },
+            ],
+          }),
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const content = data?.choices?.[0]?.message?.content;
+          if (content && typeof content === "string" && content.trim().length > 10) {
+            return { description: content.trim() };
+          }
+        }
+      } catch (err) {
+        console.warn("Groq vision fallback error:", err);
+      }
+    }
+
+    const openAiKey = process.env["OPENAI_API_KEY"];
+    if (openAiKey) {
+      try {
+        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${openAiKey}`,
+          },
+          body: JSON.stringify({
+            model: process.env["OPENAI_MODEL"] ?? "gpt-4o-mini",
+            temperature: 0.1,
+            messages: [
+              {
+                role: "system",
+                content: "You are BOW AI visual analyst. Describe the street dog in the photo in 2 concise sentences detailing physical condition and posture.",
+              },
+              {
+                role: "user",
+                content: [
+                  { type: "text", text: "Examine the dog in this image carefully. Describe posture, visible condition, and coat color in 2 sentences." },
+                  { type: "image_url", image_url: { url: imageDataUrl } },
+                ],
+              },
+            ],
+          }),
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const content = data?.choices?.[0]?.message?.content;
+          if (content && typeof content === "string" && content.trim().length > 10) {
+            return { description: content.trim() };
+          }
+        }
+      } catch (err) {
+        console.warn("OpenAI vision fallback error:", err);
+      }
+    }
+
     return {
-      description: "Photo received. Please provide observation details for rescue volunteer dispatch.",
+      description: "Street dog photo attached. Visual observation pending rescue squad dispatch.",
     };
   }
 

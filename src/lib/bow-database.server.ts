@@ -43,7 +43,11 @@ export type BowReport = {
   rescueUpdates?: RescueUpdate[];
 };
 
-export const DB_PATH = process.env["BOW_DB_PATH"] ?? ".bow.db";
+const defaultDbPath =
+  process.env["BOW_DB_PATH"] ??
+  (process.env["VERCEL"] || process.env["NODE_ENV"] === "production" ? "/tmp/.bow.db" : ".bow.db");
+
+export const DB_PATH = defaultDbPath;
 
 let sqliteDb: any = null;
 
@@ -56,10 +60,16 @@ async function getSqliteDb() {
     return null;
   }
 
-  // @ts-ignore
-  const Database = (await import("better-sqlite3")).default;
-  sqliteDb = new Database(DB_PATH);
-  return sqliteDb;
+  try {
+    // @ts-ignore
+    const Database = (await import("better-sqlite3")).default;
+    sqliteDb = new Database(DB_PATH);
+    return sqliteDb;
+  } catch (err) {
+    console.warn(`SQLite database initialization bypassed at ${DB_PATH}:`, err);
+    sqliteDb = null;
+    return null;
+  }
 }
 
 export const supabase =
@@ -169,7 +179,9 @@ export async function initializeSqliteDatabase() {
     return;
   }
 
-  db.pragma("journal_mode = WAL");
+  try {
+    db.pragma("journal_mode = WAL");
+  } catch {}
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
