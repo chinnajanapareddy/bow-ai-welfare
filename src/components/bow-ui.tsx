@@ -1043,18 +1043,24 @@ export function DogCard({
   name,
   detail,
   match,
+  image,
+  location,
   index = 0,
 }: {
   name: string;
   detail: string;
   match: string;
+  image?: string;
+  location?: string;
   index?: number;
 }) {
+  const imgSrc = image || (index % 2 === 0 ? dogCardImage : storyCardImage);
+
   return (
     <BowCard className="group overflow-hidden p-0">
       <div className="relative aspect-[0.92] overflow-hidden bg-bow-sand">
         <img
-          src={index % 2 === 0 ? dogCardImage : storyCardImage}
+          src={imgSrc}
           alt={`${name}, an adoptable street dog`}
           className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
           loading="lazy"
@@ -1064,10 +1070,15 @@ export function DogCard({
         <button
           type="button"
           aria-label={`Support ${name}`}
-          className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-background/85 text-bow-brown backdrop-blur"
+          className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-background/85 text-bow-brown backdrop-blur hover:bg-background hover:text-red-500 transition-colors cursor-pointer"
         >
           <Heart className="h-4 w-4" />
         </button>
+        {location && (
+          <span className="absolute left-3 bottom-3 text-[0.62rem] font-bold bg-background/90 text-bow-forest px-2.5 py-1 rounded-full backdrop-blur shadow-2xs">
+            📍 {location}
+          </span>
+        )}
       </div>
       <div className="p-4">
         <div className="flex items-start justify-between gap-2">
@@ -1080,7 +1091,7 @@ export function DogCard({
             <small className="block font-normal text-muted-foreground">match</small>
           </span>
         </div>
-        <Button className="mt-5 h-10 w-full rounded-lg text-xs">
+        <Button className="mt-5 h-10 w-full rounded-lg text-xs bg-bow-forest text-primary-foreground hover:bg-bow-forest/90 font-semibold cursor-pointer">
           Meet {name}
           <ArrowRight className="h-4 w-4" />
         </Button>
