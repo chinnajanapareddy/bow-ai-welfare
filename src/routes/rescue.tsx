@@ -421,21 +421,20 @@ function Rescue() {
                     >
                       <div className="flex flex-col sm:flex-row gap-4">
                         {/* Image Thumbnail */}
-                        {item.imageUrl ? (
-                          <img
-                            src={item.imageUrl}
-                            alt={item.id}
-                            loading="lazy"
-                            onError={(e) => {
-                              (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1768386629359-806f0fe996dc?auto=format&fit=crop&q=80&w=800";
-                            }}
-                            className="h-32 sm:h-36 w-full sm:w-44 object-cover rounded-lg border border-border shrink-0 shadow-2xs"
-                          />
-                        ) : (
-                          <div className="h-32 sm:h-36 w-full sm:w-44 bg-bow-sand rounded-lg border border-border flex items-center justify-center text-xs text-muted-foreground shrink-0">
-                            No photo uploaded
-                          </div>
-                        )}
+                        <img
+                          src={
+                            item.imageUrl && item.imageUrl.trim().length > 0
+                              ? item.imageUrl
+                              : "https://images.unsplash.com/photo-1768386629359-806f0fe996dc?auto=format&fit=crop&q=80&w=800"
+                          }
+                          alt={item.id}
+                          loading="lazy"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src =
+                              "https://images.unsplash.com/photo-1768386629359-806f0fe996dc?auto=format&fit=crop&q=80&w=800";
+                          }}
+                          className="h-32 sm:h-36 w-full sm:w-44 object-cover rounded-lg border border-border shrink-0 shadow-2xs"
+                        />
 
                         {/* Card Content */}
                         <div className="flex-1 flex flex-col justify-between space-y-3">

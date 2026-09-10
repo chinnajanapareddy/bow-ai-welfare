@@ -222,6 +222,19 @@ export async function submitReport(input: {
 
   const insight = await analyzeDogReport(payload);
   const reportId = `PC-${Date.now()}`;
+  const defaultDogPhotos = [
+    "https://images.unsplash.com/photo-1768386629359-806f0fe996dc?auto=format&fit=crop&q=80&w=800",
+    "https://images.unsplash.com/photo-1655108624627-2802306434d8?auto=format&fit=crop&q=80&w=800",
+    "https://images.unsplash.com/photo-1632090841068-41088be12ce9?auto=format&fit=crop&q=80&w=800",
+    "https://images.unsplash.com/photo-1659292692984-4787c010746f?auto=format&fit=crop&q=80&w=800",
+    "https://images.unsplash.com/photo-1633512227626-a1f547fc6de3?auto=format&fit=crop&q=80&w=800",
+  ];
+  const charSum = reportId.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  const chosenPhoto =
+    payload.imageDataUrl && payload.imageDataUrl.length > 0
+      ? payload.imageDataUrl
+      : defaultDogPhotos[Math.abs(charSum) % defaultDogPhotos.length];
+
   const report: BowReport = {
     id: reportId,
     email: payload.email,
@@ -232,7 +245,7 @@ export async function submitReport(input: {
     priority: insight.priority,
     status: "OPEN",
     createdAt: new Date().toISOString(),
-    ...(payload.imageDataUrl ? { imageUrl: payload.imageDataUrl } : {}),
+    imageUrl: chosenPhoto,
     confidence: insight.confidence ?? 92,
     indicators: insight.indicators ?? ["Visible physical assessment", "Location logged"],
     whyPriority: insight.whyPriority ?? "Assigned based on visual cues and incident urgency.",

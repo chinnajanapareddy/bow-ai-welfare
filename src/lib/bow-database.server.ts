@@ -151,6 +151,17 @@ function mapReportRow(row: {
   acceptedAt?: string | null;
   rescueUpdates?: string | null;
 }): BowReport {
+  const defaultDogPhotos = [
+    "https://images.unsplash.com/photo-1768386629359-806f0fe996dc?auto=format&fit=crop&q=80&w=800",
+    "https://images.unsplash.com/photo-1655108624627-2802306434d8?auto=format&fit=crop&q=80&w=800",
+    "https://images.unsplash.com/photo-1632090841068-41088be12ce9?auto=format&fit=crop&q=80&w=800",
+    "https://images.unsplash.com/photo-1659292692984-4787c010746f?auto=format&fit=crop&q=80&w=800",
+    "https://images.unsplash.com/photo-1633512227626-a1f547fc6de3?auto=format&fit=crop&q=80&w=800",
+  ];
+  const charCodeSum = row.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  const fallbackImage = defaultDogPhotos[Math.abs(charCodeSum) % defaultDogPhotos.length];
+  const finalImageUrl = row.imageUrl && row.imageUrl.trim().length > 0 ? row.imageUrl : fallbackImage;
+
   return {
     id: row.id,
     ...(row.email ? { email: row.email } : {}),
@@ -161,7 +172,7 @@ function mapReportRow(row: {
     priority: row.priority as Priority,
     status: row.status,
     createdAt: row.createdAt,
-    ...(row.imageUrl ? { imageUrl: row.imageUrl } : {}),
+    imageUrl: finalImageUrl,
     confidence: row.confidence ?? 91,
     indicators: parseJsonArray<string>(row.indicators),
     ...(row.whyPriority ? { whyPriority: row.whyPriority } : {}),

@@ -314,21 +314,20 @@ function Profile() {
 
                         {/* Dog Photo & Details */}
                         <div className="flex flex-col sm:flex-row gap-4">
-                          {report.imageUrl ? (
-                            <img
-                              src={report.imageUrl}
-                              alt={`Reported dog ${report.id}`}
-                              loading="lazy"
-                              onError={(e) => {
-                                (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1768386629359-806f0fe996dc?auto=format&fit=crop&q=80&w=800";
-                              }}
-                              className="h-36 w-full sm:w-40 object-cover rounded-lg border border-border shrink-0 shadow-2xs"
-                            />
-                          ) : (
-                            <div className="h-36 w-full sm:w-40 bg-bow-sand rounded-lg border border-border flex items-center justify-center text-xs text-muted-foreground shrink-0">
-                              No photo attached
-                            </div>
-                          )}
+                          <img
+                            src={
+                              report.imageUrl && report.imageUrl.trim().length > 0
+                                ? report.imageUrl
+                                : "https://images.unsplash.com/photo-1768386629359-806f0fe996dc?auto=format&fit=crop&q=80&w=800"
+                            }
+                            alt={`Reported dog ${report.id}`}
+                            loading="lazy"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src =
+                                "https://images.unsplash.com/photo-1768386629359-806f0fe996dc?auto=format&fit=crop&q=80&w=800";
+                            }}
+                            className="h-36 w-full sm:w-40 object-cover rounded-lg border border-border shrink-0 shadow-2xs"
+                          />
 
                           <div className="flex-1 space-y-2">
                             <a
