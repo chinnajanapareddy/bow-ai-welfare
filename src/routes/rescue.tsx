@@ -74,7 +74,7 @@ function Rescue() {
 
   const [reports, setReports] = useState<BowReport[]>([]);
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
-  const [filter, setFilter] = useState<"ALL" | "OPEN" | "MY_CASES" | "RESOLVED">("ALL");
+  const [filter, setFilter] = useState<"ALL" | "OPEN" | "MY_CASES" | "RESOLVED">("OPEN");
 
   // User Auth session state
   const [currentUser, setCurrentUser] = useState<{
@@ -217,9 +217,10 @@ function Rescue() {
         return;
       }
 
-      setAcceptSuccess("Case Accepted! You are now the assigned rescue volunteer.");
+      setAcceptSuccess(`Case ${caseId} Accepted! You are now the assigned rescue volunteer. Turn-by-turn navigation is ready.`);
       await loadReports();
       setSelectedCaseId(caseId);
+      setFilter("MY_CASES");
     } catch (err) {
       setAcceptError(err instanceof Error ? err.message : "Failed to accept case.");
     } finally {

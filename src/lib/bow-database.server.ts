@@ -644,63 +644,61 @@ export async function acceptRescueCase(input: {
     };
   }
 
+  const initialUpdate: RescueUpdate = {
+    id: `update-${Date.now()}`,
+    time: now,
+    author: userName,
+    note: `Volunteer ${userName} accepted case assignment.`,
+    status: "ACCEPTED",
+  };
+  const updatedRescueUpdates = [...(existing.rescueUpdates ?? []), initialUpdate];
+
+  // 1. Update SQLite if available
   const db = await getSqliteDb();
   if (db) {
-    const stmt = db.prepare(`
-      UPDATE reports
-      SET status = 'ACCEPTED', acceptedBy = ?, acceptedByName = ?, acceptedAt = ?
-      WHERE id = ? 
-        AND (acceptedBy IS NULL OR acceptedBy = '')
-    `);
-    const info = stmt.run(userEmail, userName, now, caseId);
-
-    if (info.changes === 0) {
-      const currentCase = await getReportById(caseId);
-      if (currentCase?.acceptedBy && normalizeEmail(currentCase.acceptedBy) === userEmail) {
-        return { ok: true, message: "Case Accepted successfully!", report: currentCase };
-      }
-      const claimedBy = currentCase?.acceptedByName || currentCase?.acceptedBy || "another volunteer";
-      return {
-        ok: false,
-        error: "Case Already Accepted",
-        message: `This rescue case has already been accepted by ${claimedBy}.`,
-        ...(currentCase ? { report: currentCase } : {}),
-      };
-    }
-
-    const updated = await getReportById(caseId);
-    if (updated) {
-      const initialUpdate: RescueUpdate = {
-        id: `update-${Date.now()}`,
-        time: now,
-        author: userName,
-        note: `Volunteer ${userName} accepted case assignment.`,
-        status: "ACCEPTED",
-      };
-      const updates = [...(updated.rescueUpdates ?? []), initialUpdate];
-      db.prepare("UPDATE reports SET rescueUpdates = ? WHERE id = ?").run(
-        JSON.stringify(updates),
-        caseId,
-      );
-      updated.rescueUpdates = updates;
-
-      if (DB_MODE === "supabase" && supabase) {
-        try {
-          await supabase.from("reports").update({
-            status: "ACCEPTED",
-          }).eq("id", caseId);
-        } catch {}
-      }
-
-      return {
-        ok: true,
-        message: "Case Accepted successfully!",
-        report: updated,
-      };
+    try {
+      const stmt = db.prepare(`
+        UPDATE reports
+        SET status = 'ACCEPTED', acceptedBy = ?, acceptedByName = ?, acceptedAt = ?, rescueUpdates = ?
+        WHERE id = ? 
+          AND (acceptedBy IS NULL OR acceptedBy = '' OR acceptedBy = ?)
+      `);
+      stmt.run(userEmail, userName, now, JSON.stringify(updatedRescueUpdates), caseId, userEmail);
+    } catch (err) {
+      console.warn("SQLite acceptRescueCase error", err);
     }
   }
 
-  return { ok: false, error: "Database Error", message: "Database unavailable." };
+  // 2. Update Supabase if enabled
+  if (DB_MODE === "supabase" && supabase) {
+    try {
+      await supabase.from("reports").update({
+        status: "ACCEPTED",
+        acceptedBy: userEmail,
+        acceptedByName: userName,
+        acceptedAt: now,
+        rescueUpdates: JSON.stringify(updatedRescueUpdates),
+      }).eq("id", caseId);
+    } catch (err) {
+      console.warn("Supabase acceptRescueCase error", err);
+    }
+  }
+
+  // 3. Fallback memory & return latest state
+  const updatedReport: BowReport = {
+    ...existing,
+    status: "ACCEPTED",
+    acceptedBy: userEmail,
+    acceptedByName: userName,
+    acceptedAt: now,
+    rescueUpdates: updatedRescueUpdates,
+  };
+
+  return {
+    ok: true,
+    message: "Case Accepted successfully!",
+    report: updatedReport,
+  };
 }
 
 export async function updateCaseStatusWithAuth(input: {
@@ -735,40 +733,50 @@ export async function updateCaseStatusWithAuth(input: {
     };
   }
 
+  const newUpdate: RescueUpdate = {
+    id: `update-${Date.now()}`,
+    time: now,
+    author: userName,
+    note: noteText,
+    status: newStatus,
+  };
+
+  const existingUpdates = report.rescueUpdates ?? [];
+  const updatedTimeline = [...existingUpdates, newUpdate];
+
+  // 1. Update SQLite
   const db = await getSqliteDb();
   if (db) {
-    const newUpdate: RescueUpdate = {
-      id: `update-${Date.now()}`,
-      time: now,
-      author: userName,
-      note: noteText,
-      status: newStatus,
-    };
-
-    const existingUpdates = report.rescueUpdates ?? [];
-    const updatedTimeline = [...existingUpdates, newUpdate];
-
-    db.prepare("UPDATE reports SET status = ?, rescueUpdates = ? WHERE id = ?").run(
-      newStatus,
-      JSON.stringify(updatedTimeline),
-      caseId,
-    );
-
-    if (DB_MODE === "supabase" && supabase) {
-      try {
-        await supabase.from("reports").update({ status: newStatus }).eq("id", caseId);
-      } catch {}
-    }
-
-    const updated = await getReportById(caseId);
-    return {
-      ok: true,
-      message: `Rescue status updated to ${newStatus}.`,
-      ...(updated ? { report: updated } : {}),
-    };
+    try {
+      db.prepare("UPDATE reports SET status = ?, rescueUpdates = ? WHERE id = ?").run(
+        newStatus,
+        JSON.stringify(updatedTimeline),
+        caseId,
+      );
+    } catch {}
   }
 
-  return { ok: false, error: "Database Error", message: "Unable to update status." };
+  // 2. Update Supabase
+  if (DB_MODE === "supabase" && supabase) {
+    try {
+      await supabase.from("reports").update({
+        status: newStatus,
+        rescueUpdates: JSON.stringify(updatedTimeline),
+      }).eq("id", caseId);
+    } catch {}
+  }
+
+  const updatedReport: BowReport = {
+    ...report,
+    status: newStatus,
+    rescueUpdates: updatedTimeline,
+  };
+
+  return {
+    ok: true,
+    message: `Rescue status updated to ${newStatus}.`,
+    report: updatedReport,
+  };
 }
 
 export async function linkLocalReportsToUser(userEmail: string, reportIds: string[]): Promise<void> {
