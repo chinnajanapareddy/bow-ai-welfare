@@ -16,7 +16,7 @@ import { BowLogo } from "../components/bow-ui";
 import { WelcomeScreen } from "../components/bow-welcome";
 import { FloatingPaws } from "../components/bow-pet-animations";
 import { Button } from "../components/ui/button";
-import { Menu, X } from "../components/bow-icons";
+import { Activity, Bone, CircleHelp, Heart, Menu, PawPrint, ShieldAlert, Users, X } from "lucide-react";
 
 function NotFoundComponent() {
   return (
@@ -184,31 +184,52 @@ function SiteChrome({ children }: { children: ReactNode }) {
   };
 
 
-  const links = [
-    ["About", "/about"],
-    ["Report", "/report"],
-    ["Rescue Feed", "/rescue"],
-    ["My Reported Dogs", "/profile"],
-    ["Adopt", "/adopt"],
-    ["Community", "/community"],
-    ["Donate", "/donate"],
-  ] as const;
+  const navItems = [
+    { label: "About", href: "/about", icon: CircleHelp },
+    { label: "Report", href: "/report", icon: ShieldAlert, alert: true },
+    { label: "Rescue Feed", href: "/rescue", icon: Activity },
+    { label: "My Reported Dogs", href: "/profile", icon: PawPrint },
+    { label: "Adopt", href: "/adopt", icon: Heart },
+    { label: "Community", href: "/community", icon: Users },
+    { label: "Donate", href: "/donate", icon: Bone },
+  ];
 
   return (
     <div className="min-h-screen bg-bow-ivory text-foreground">
       <WelcomeScreen />
-      <header className="relative z-50 border-b border-border/70 bg-bow-ivory/90 backdrop-blur-xl">
-        <div className="mx-auto flex h-[76px] max-w-[1400px] items-center justify-between px-5 sm:px-10">
+      <header className="sticky top-0 z-50 border-b border-bow-brown/15 bg-bow-ivory/95 backdrop-blur-md shadow-2xs transition-all duration-300">
+        <div className="mx-auto flex h-[80px] max-w-[1400px] items-center justify-between px-4 sm:px-8">
           <BowLogo />
-          <nav className="hidden items-center gap-7 lg:flex">
-            {links.map(([label, href]) => (
+          <nav className="hidden items-center gap-1.5 lg:flex bg-bow-sand/50 p-1.5 rounded-full border border-bow-brown/15 shadow-2xs">
+            {navItems.map(({ label, href, icon: Icon, alert }) => (
               <Link
                 key={href}
                 to={href}
-                className="story-link text-[0.72rem] font-medium text-muted-foreground"
-                activeProps={{ className: "text-bow-forest font-semibold" }}
+                className="group relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-muted-foreground transition-all duration-300 hover:text-bow-forest hover:bg-bow-sand hover:-translate-y-0.5 active:scale-95 cursor-pointer"
+                activeProps={{
+                  className:
+                    "bg-bow-forest text-primary-foreground font-bold shadow-xs hover:text-primary-foreground hover:bg-bow-forest scale-105 transition-all duration-300",
+                }}
               >
-                {label}
+                {({ isActive }) => (
+                  <>
+                    <Icon
+                      className={`h-3.5 w-3.5 transition-transform duration-300 group-hover:scale-125 ${
+                        isActive ? "text-amber-300 animate-pulse" : "text-bow-brown group-hover:text-bow-forest"
+                      }`}
+                    />
+                    <span>{label}</span>
+                    {alert && !isActive && (
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+                      </span>
+                    )}
+                    {isActive && (
+                      <span className="ml-0.5 text-[0.68rem] animate-bounce">🐾</span>
+                    )}
+                  </>
+                )}
               </Link>
             ))}
           </nav>
@@ -217,32 +238,35 @@ function SiteChrome({ children }: { children: ReactNode }) {
               <div className="flex items-center gap-3">
                 <Link
                   to="/profile"
-                  className="flex items-center gap-2 rounded-lg bg-bow-sand/80 px-3 py-1.5 border border-border text-xs text-foreground hover:bg-bow-sand transition-colors"
+                  className="flex items-center gap-2 rounded-full bg-bow-sand/90 px-3.5 py-1.5 border border-bow-brown/20 text-xs text-foreground hover:bg-bow-sand transition-all hover:scale-102 cursor-pointer shadow-2xs"
                 >
-                  <span className="h-2 w-2 rounded-full bg-emerald-600" />
-                  <span className="font-semibold">{userSession.name}</span>
-                  <span className="text-[0.65rem] px-1.5 py-0.5 rounded bg-bow-forest text-primary-foreground font-medium">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="font-bold text-bow-forest">{userSession.name}</span>
+                  <span className="text-[0.65rem] px-2 py-0.5 rounded-full bg-bow-forest text-primary-foreground font-semibold">
                     {userSession.role}
                   </span>
                 </Link>
                 <Button
                   onClick={handleLogout}
                   variant="outline"
-                  className="h-9 rounded-lg px-3 text-xs cursor-pointer text-muted-foreground hover:text-foreground"
+                  className="h-9 rounded-full px-4 text-xs cursor-pointer text-muted-foreground hover:text-foreground hover:bg-red-50 hover:border-red-200 transition-all"
                 >
                   Logout
                 </Button>
               </div>
             ) : (
               <>
-                <Button asChild variant="outline" className="h-10 rounded-lg px-4 text-xs">
+                <Button asChild variant="outline" className="h-9 rounded-full px-4 text-xs font-semibold hover:border-bow-forest/40 hover:bg-bow-sand/60 transition-all hover:scale-102">
                   <Link to="/login">Login</Link>
                 </Button>
                 <Button
                   asChild
-                  className="h-10 rounded-lg bg-bow-forest px-4 text-xs text-primary-foreground hover:bg-bow-forest/90"
+                  className="h-9 rounded-full bg-bow-forest px-5 text-xs font-bold text-primary-foreground shadow-xs hover:bg-bow-forest/90 hover:scale-105 active:scale-95 transition-all"
                 >
-                  <Link to="/signup">Join BOW</Link>
+                  <Link to="/signup" className="flex items-center gap-1">
+                    <span>Join BOW</span>
+                    <span className="text-amber-300">🐾</span>
+                  </Link>
                 </Button>
               </>
             )}
@@ -251,22 +275,41 @@ function SiteChrome({ children }: { children: ReactNode }) {
             variant="outline"
             size="icon"
             aria-label={menuOpen ? "Close menu" : "Open menu"}
-            className="rounded-lg lg:hidden"
+            className="rounded-full lg:hidden"
             onClick={() => setMenuOpen(!menuOpen)}
           >
             {menuOpen ? <X /> : <Menu />}
           </Button>
         </div>
         {menuOpen && (
-          <div className="border-t border-border bg-bow-paper px-5 py-5 lg:hidden">
-            <nav className="grid gap-1">
-              {links.map(([label, href]) => (
+          <div className="border-t border-border bg-bow-paper/95 backdrop-blur-lg px-5 py-5 lg:hidden animate-in slide-in-from-top-2 duration-200">
+            <nav className="grid gap-1.5">
+              {navItems.map(({ label, href, icon: Icon, alert }) => (
                 <Link
                   key={href}
                   to={href}
-                  className="rounded-lg px-3 py-3 text-sm text-foreground hover:bg-bow-sand"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold text-foreground transition-all hover:bg-bow-sand cursor-pointer"
+                  activeProps={{
+                    className: "bg-bow-forest text-primary-foreground font-bold shadow-xs hover:bg-bow-forest hover:text-primary-foreground",
+                  }}
                 >
-                  {label}
+                  {({ isActive }) => (
+                    <>
+                      <div className="flex items-center gap-3">
+                        <Icon className={`h-4 w-4 ${isActive ? "text-amber-300" : "text-bow-brown"}`} />
+                        <span>{label}</span>
+                      </div>
+                      {alert && !isActive && (
+                        <span className="text-[0.65rem] bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded-full border border-red-200">
+                          Urgent Triage
+                        </span>
+                      )}
+                      {isActive && (
+                        <span className="text-sm animate-bounce">🐾</span>
+                      )}
+                    </>
+                  )}
                 </Link>
               ))}
               <div className="mt-4 pt-3 border-t border-border">
@@ -278,20 +321,20 @@ function SiteChrome({ children }: { children: ReactNode }) {
                         {userSession.role}
                       </span>
                     </div>
-                    <Button asChild variant="outline" className="w-full justify-start text-xs">
+                    <Button asChild variant="outline" className="w-full justify-start text-xs rounded-xl">
                       <Link to="/profile">My Profile & Rescues</Link>
                     </Button>
-                    <Button onClick={handleLogout} variant="ghost" className="w-full text-xs text-red-600 justify-start">
+                    <Button onClick={handleLogout} variant="ghost" className="w-full text-xs text-red-600 justify-start rounded-xl">
                       Logout
                     </Button>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-2">
-                    <Button asChild variant="outline" className="rounded-lg">
+                    <Button asChild variant="outline" className="rounded-xl">
                       <Link to="/login">Login</Link>
                     </Button>
-                    <Button asChild className="rounded-lg bg-bow-forest text-primary-foreground">
-                      <Link to="/signup">Join BOW</Link>
+                    <Button asChild className="rounded-xl bg-bow-forest text-primary-foreground font-bold">
+                      <Link to="/signup">Join BOW 🐾</Link>
                     </Button>
                   </div>
                 )}
