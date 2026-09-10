@@ -433,7 +433,9 @@ async function resolveLocationAddress(lat: number, lng: number): Promise<string>
 
     setSubmitting(true);
     try {
-      const compressed = imagePreview ? await compressImageForAi(imagePreview, 800) : undefined;
+      const imageToSend = imagePreview
+        ? (await compressImageForAi(imagePreview, 800)) || imagePreview
+        : undefined;
 
       const userEmail =
         (typeof window !== "undefined"
@@ -447,7 +449,7 @@ async function resolveLocationAddress(lat: number, lng: number): Promise<string>
           description: trimmedDescription,
           voiceText: voiceText || trimmedDescription,
           concern: voiceText ? "Possible mobility issue" : "Needs review",
-          ...(compressed ? { imageDataUrl: compressed } : {}),
+          ...(imageToSend ? { imageDataUrl: imageToSend } : {}),
         },
       });
 
@@ -813,6 +815,17 @@ async function resolveLocationAddress(lat: number, lng: number): Promise<string>
                 </button>
               </div>
 
+              {/* Uploaded Dog Photo Display */}
+              {(lastReport.imageUrl || imagePreview) && (
+                <div className="overflow-hidden rounded-lg border border-emerald-200 shadow-2xs">
+                  <img
+                    src={lastReport.imageUrl || imagePreview!}
+                    alt={`Reported dog ${lastReport.id}`}
+                    className="h-48 w-full object-cover"
+                  />
+                </div>
+              )}
+
               <div className="rounded-md bg-emerald-50/80 p-3 border border-emerald-200">
                 <p className="text-xs text-emerald-900">
                   <strong>Current Live Status:</strong>{" "}
@@ -858,6 +871,16 @@ async function resolveLocationAddress(lat: number, lng: number): Promise<string>
                 }`}>
                   4. Rescued 🎉
                 </div>
+              </div>
+
+              {/* Link to view reported dog history */}
+              <div className="pt-2">
+                <a
+                  href="/profile#my-reports"
+                  className="w-full inline-flex items-center justify-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2.5 rounded-lg text-xs font-bold transition-colors shadow-xs"
+                >
+                  <span>View Live Status in My Reported Dogs History →</span>
+                </a>
               </div>
             </div>
           )}

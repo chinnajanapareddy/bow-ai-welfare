@@ -508,9 +508,20 @@ function Rescue() {
                               )}
 
                               {!isOpen && (item.acceptedByName || item.acceptedBy) && (
-                                <span className="text-[0.68rem] font-semibold text-emerald-800 bg-emerald-50 px-2 py-1 rounded border border-emerald-200">
-                                  ✓ Accepted by {isMine ? "You" : (item.acceptedByName || item.acceptedBy)}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[0.68rem] font-semibold text-emerald-800 bg-emerald-50 px-2 py-1 rounded border border-emerald-200">
+                                    ✓ Accepted by {isMine ? "You" : (item.acceptedByName || item.acceptedBy)}
+                                  </span>
+                                  <a
+                                    href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(item.location)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 bg-bow-forest text-primary-foreground text-[0.68rem] font-bold px-2.5 py-1 rounded-md hover:bg-bow-forest/90 cursor-pointer"
+                                    title="Open turn-by-turn navigation in Google Maps"
+                                  >
+                                    <MapPin className="h-3 w-3 text-amber-300" /> Navigate
+                                  </a>
+                                </div>
                               )}
                             </div>
                           </div>
@@ -610,14 +621,27 @@ function Rescue() {
                       </span>
 
                       {(selectedCase.acceptedBy || selectedCase.acceptedByName) ? (
-                        <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-950 space-y-1">
-                          <p className="font-bold text-emerald-900 flex items-center gap-1.5">
-                            <Check className="h-4 w-4 text-emerald-600" />
-                            Case Accepted by {selectedCase.acceptedByName || selectedCase.acceptedBy}
-                          </p>
-                          <p className="text-[0.68rem] text-emerald-800">
-                            Claimed at: {selectedCase.acceptedAt ? new Date(selectedCase.acceptedAt).toLocaleString() : "Recently"}
-                          </p>
+                        <div className="space-y-2.5">
+                          <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-950 space-y-1">
+                            <p className="font-bold text-emerald-900 flex items-center gap-1.5">
+                              <Check className="h-4 w-4 text-emerald-600" />
+                              Case Accepted by {selectedCase.acceptedByName || selectedCase.acceptedBy}
+                            </p>
+                            <p className="text-[0.68rem] text-emerald-800">
+                              Claimed at: {selectedCase.acceptedAt ? new Date(selectedCase.acceptedAt).toLocaleString() : "Recently"}
+                            </p>
+                          </div>
+
+                          <a
+                            href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(selectedCase.location)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full inline-flex items-center justify-center gap-2 bg-bow-forest text-primary-foreground hover:bg-bow-forest/90 px-4 py-2.5 rounded-xl font-bold text-xs shadow-xs transition-all cursor-pointer"
+                          >
+                            <MapPin className="h-4 w-4 text-amber-300 shrink-0" />
+                            <span>Navigate to Location in Google Maps 🧭</span>
+                            <ExternalLink className="h-3.5 w-3.5 opacity-80" />
+                          </a>
                         </div>
                       ) : (
                         <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-950 space-y-2">
