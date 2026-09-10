@@ -7,6 +7,7 @@ import {
   findUserByEmail,
   getAllReports,
   getDisplayNameFromEmail,
+  getLiveSystemStats,
   getReportById,
   getStorageMode,
   initializeDatabase,
@@ -420,3 +421,8 @@ export const updateCaseStatusServerFn = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }) => updateCaseStatusWithAuth(data));
+
+export const getSystemStatsServerFn = createServerFn({ method: "GET" }).handler(async () =>
+  getLiveSystemStats(),
+);
+

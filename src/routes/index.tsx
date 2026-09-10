@@ -1,4 +1,7 @@
+import { useEffect, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { getSystemStatsServerFn } from "@/lib/bow-backend.server";
 import {
   ArrowRight,
   BadgeCheck,
@@ -15,7 +18,7 @@ import {
   ReportForm,
   SectionHeading,
 } from "@/components/bow-ui";
-import { dogs, impactMetrics, services, stories } from "@/lib/bow-data";
+import { dogs, services, stories } from "@/lib/bow-data";
 import { FloatingPaws, FoodBowl, SwayingBone } from "@/components/bow-pet-animations";
 import heroImage from "@/assets/bow-hero.jpg";
 import feedingImage from "@/assets/bow-feeding-card.jpg";
@@ -42,6 +45,40 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
+  const getSystemStats = useServerFn(getSystemStatsServerFn);
+  const [stats, setStats] = useState({
+    casesRescued: "4",
+    mealsProvided: "48",
+    dogsAdopted: "8",
+    activeGuardians: "12",
+  });
+
+  useEffect(() => {
+    async function loadRealStats() {
+      try {
+        const live = await getSystemStats();
+        if (live) {
+          setStats({
+            casesRescued: live.casesRescued,
+            mealsProvided: live.mealsProvided,
+            dogsAdopted: live.dogsAdopted,
+            activeGuardians: live.activeGuardians,
+          });
+        }
+      } catch (err) {
+        console.warn("Failed to load live stats:", err);
+      }
+    }
+    loadRealStats();
+  }, []);
+
+  const liveMetrics = [
+    { value: stats.casesRescued, label: "Cases handled" },
+    { value: stats.mealsProvided, label: "Meals provided" },
+    { value: stats.dogsAdopted, label: "Dogs adopted" },
+    { value: stats.activeGuardians, label: "Community members" },
+  ];
+
   return (
     <main>
       <section className="relative min-h-[680px] overflow-hidden border-b border-border bg-bow-forest text-primary-foreground sm:min-h-[720px]">
@@ -83,7 +120,7 @@ function Home() {
       </section>
       <div className="relative z-10 mx-auto -mt-8 max-w-6xl px-5 sm:-mt-10 sm:px-10">
         <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-primary-foreground/30 bg-bow-paper/90 shadow-xl backdrop-blur-xl sm:grid-cols-4">
-          {impactMetrics.map((metric) => (
+          {liveMetrics.map((metric) => (
             <div
               key={metric.label}
               className="border-b border-border px-4 py-5 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0"

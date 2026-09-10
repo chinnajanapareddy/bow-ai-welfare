@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { ActionLink, BowCard, SectionHeading } from "@/components/bow-ui";
+import { getSystemStatsServerFn } from "@/lib/bow-backend.server";
 import {
   ArrowRight,
   BadgeCheck,
@@ -102,8 +104,32 @@ const heroDogFaces = [
 ];
 
 function About() {
+  const getSystemStats = useServerFn(getSystemStatsServerFn);
   const [activeDogIndex, setActiveDogIndex] = useState(0);
   const activeDog = heroDogFaces[activeDogIndex];
+  const [stats, setStats] = useState({
+    casesRescued: "4",
+    mealsProvided: "48",
+    activeGuardians: "12",
+  });
+
+  useEffect(() => {
+    async function loadRealStats() {
+      try {
+        const live = await getSystemStats();
+        if (live) {
+          setStats({
+            casesRescued: live.casesRescued,
+            mealsProvided: live.mealsProvided,
+            activeGuardians: live.activeGuardians,
+          });
+        }
+      } catch (err) {
+        console.warn("Failed to load live stats:", err);
+      }
+    }
+    loadRealStats();
+  }, []);
 
   const steps = [
     {
@@ -269,17 +295,17 @@ function About() {
               {/* Impact stats pill */}
               <div className="mt-8 flex items-center gap-6 border-t border-border/60 pt-6">
                 <div>
-                  <p className="font-display text-2xl font-semibold text-foreground">126+</p>
+                  <p className="font-display text-2xl font-semibold text-foreground">{stats.casesRescued}</p>
                   <p className="text-xs text-muted-foreground">Cases Rescued</p>
                 </div>
                 <div className="h-8 w-px bg-border/80" />
                 <div>
-                  <p className="font-display text-2xl font-semibold text-foreground">347</p>
+                  <p className="font-display text-2xl font-semibold text-foreground">{stats.mealsProvided}</p>
                   <p className="text-xs text-muted-foreground">Meals Distributed</p>
                 </div>
                 <div className="h-8 w-px bg-border/80" />
                 <div>
-                  <p className="font-display text-2xl font-semibold text-foreground">2,400+</p>
+                  <p className="font-display text-2xl font-semibold text-foreground">{stats.activeGuardians}</p>
                   <p className="text-xs text-muted-foreground">Active Guardians</p>
                 </div>
               </div>
