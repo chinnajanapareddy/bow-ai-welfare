@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowRight, BadgeCheck, Check, ExternalLink, Heart, LocateFixed, MapPin, Mic, PawPrint, ShieldCheck, Sparkles } from "./bow-icons";
+import { ArrowRight, BadgeCheck, Camera, Check, ExternalLink, Heart, LocateFixed, MapPin, Mic, PawPrint, ShieldCheck, Sparkles, X } from "./bow-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -204,6 +204,91 @@ export function ReportForm({
   const getReportByIdFn = useServerFn(getReportByIdServerFn);
   const recognitionRef = React.useRef<any>(null);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const cameraInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [showWebcamModal, setShowWebcamModal] = React.useState(false);
+  const [facingMode, setFacingMode] = React.useState<"environment" | "user">("environment");
+  const videoRef = React.useRef<HTMLVideoElement | null>(null);
+  const streamRef = React.useRef<MediaStream | null>(null);
+
+  const stopWebcam = React.useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    setShowWebcamModal(false);
+  }, []);
+
+  const openWebcam = async (mode: "environment" | "user" = "environment") => {
+    try {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+      }
+      setFacingMode(mode);
+      setShowWebcamModal(true);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: mode, width: { ideal: 1280 }, height: { ideal: 720 } },
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+    } catch (err) {
+      console.warn("Webcam access failed, opening native mobile camera input", err);
+      stopWebcam();
+      cameraInputRef.current?.click();
+    }
+  };
+
+  const handleCameraClick = () => {
+    const isMobile =
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+      "ontouchstart" in window;
+    if (isMobile && cameraInputRef.current) {
+      cameraInputRef.current.click();
+    } else {
+      void openWebcam("environment");
+    }
+  };
+
+  const processImageDataUrl = async (rawDataUrl: string) => {
+    setImagePreview(rawDataUrl);
+    setGeneratingDesc(true);
+    setDescCompleted(false);
+
+    try {
+      const compressed = await compressImageForAi(rawDataUrl, 800);
+      const res = await generateDescriptionFn({
+        data: {
+          imageDataUrl: compressed,
+          ...(voiceText ? { voiceText } : {}),
+        },
+      });
+      if (res?.description && !res.description.includes("Please select or upload")) {
+        setDescription(res.description);
+        setDescCompleted(true);
+      }
+    } catch (err) {
+      console.warn("Auto AI image analysis error", err);
+    } finally {
+      setGeneratingDesc(false);
+    }
+  };
+
+  const captureWebcamSnapshot = async () => {
+    if (!videoRef.current) return;
+    const video = videoRef.current;
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+      stopWebcam();
+      await processImageDataUrl(dataUrl);
+    }
+  };
 
   React.useEffect(() => {
     if (!submitted || !lastReport?.id) return;
@@ -225,36 +310,13 @@ export function ReportForm({
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) {
-      setImagePreview(null);
-      return;
-    }
+    if (!file) return;
 
     const reader = new FileReader();
     reader.onload = async () => {
       const rawDataUrl = typeof reader.result === "string" ? reader.result : null;
-      if (!rawDataUrl) return;
-
-      setImagePreview(rawDataUrl);
-      setGeneratingDesc(true);
-      setDescCompleted(false);
-
-      try {
-        const compressed = await compressImageForAi(rawDataUrl, 800);
-        const res = await generateDescriptionFn({
-          data: {
-            imageDataUrl: compressed,
-            ...(voiceText ? { voiceText } : {}),
-          },
-        });
-        if (res?.description && !res.description.includes("Please select or upload")) {
-          setDescription(res.description);
-          setDescCompleted(true);
-        }
-      } catch (err) {
-        console.warn("Auto AI image analysis error", err);
-      } finally {
-        setGeneratingDesc(false);
+      if (rawDataUrl) {
+        await processImageDataUrl(rawDataUrl);
       }
     };
     reader.readAsDataURL(file);
@@ -636,33 +698,95 @@ function getCurrentPositionPromise(options: PositionOptions): Promise<Geolocatio
         </span>
       </div>
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
-        <label className="upload-tile sm:col-span-2 cursor-pointer">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*,video/*"
-            className="sr-only"
-            onChange={handleImageChange}
-          />
-          <span className="grid h-10 w-10 place-items-center rounded-full bg-background">
-            <Sparkles className="h-4 w-4 text-bow-brown" />
-          </span>
-          <span>
-            <strong className="block text-sm">Upload dog photo or short video</strong>
-            <small className="text-xs text-muted-foreground">
-              Click to select photo · Gemini AI Vision analyzes photo automatically
-            </small>
-          </span>
-        </label>
-        {imagePreview && (
-          <div className="relative sm:col-span-2 overflow-hidden rounded-lg border border-border bg-background">
-            <img src={imagePreview} alt="Selected dog report" className="h-48 w-full object-cover" />
+        {!imagePreview ? (
+          <div className="sm:col-span-2 space-y-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,video/*"
+              className="sr-only"
+              onChange={handleImageChange}
+            />
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="sr-only"
+              onChange={handleImageChange}
+            />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Direct Camera Option */}
+              <button
+                type="button"
+                onClick={handleCameraClick}
+                className="flex items-center gap-3 p-4 rounded-xl border-2 border-dashed border-bow-brown/40 bg-bow-sand/50 hover:bg-bow-sand hover:border-bow-brown transition-all cursor-pointer group text-left shadow-2xs"
+              >
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-bow-forest text-white group-hover:scale-105 transition-transform shadow-xs">
+                  <Camera className="h-5 w-5" />
+                </span>
+                <div>
+                  <strong className="block text-sm font-bold text-foreground">Take Live Photo 📷</strong>
+                  <span className="text-[0.7rem] text-muted-foreground block">
+                    Snap photo directly using your camera
+                  </span>
+                </div>
+              </button>
+
+              {/* Gallery Upload Option */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-3 p-4 rounded-xl border-2 border-dashed border-border bg-background hover:bg-muted/40 transition-all cursor-pointer group text-left shadow-2xs"
+              >
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-bow-brown/10 text-bow-brown group-hover:scale-105 transition-transform">
+                  <Sparkles className="h-5 w-5" />
+                </span>
+                <div>
+                  <strong className="block text-sm font-bold text-foreground">Upload from Gallery 🖼️</strong>
+                  <span className="text-[0.7rem] text-muted-foreground block">
+                    Select existing photo or video file
+                  </span>
+                </div>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="relative sm:col-span-2 overflow-hidden rounded-xl border border-border bg-background shadow-xs">
+            <img src={imagePreview} alt="Selected dog report" className="h-52 w-full object-cover" />
             {generatingDesc && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/60 text-white gap-2 text-xs font-medium backdrop-blur-xs">
                 <Sparkles className="h-4 w-4 animate-spin text-amber-400" />
                 <span>✨ Gemini AI Vision analyzing photo...</span>
               </div>
             )}
+            <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={handleCameraClick}
+                title="Retake photo with camera"
+                className="bg-black/75 hover:bg-black text-white text-xs font-semibold px-3 py-1.5 rounded-lg backdrop-blur-xs flex items-center gap-1 cursor-pointer transition-colors shadow-sm"
+              >
+                <Camera className="h-3.5 w-3.5" /> Retake 📷
+              </button>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                title="Change photo from gallery"
+                className="bg-black/75 hover:bg-black text-white text-xs font-semibold px-3 py-1.5 rounded-lg backdrop-blur-xs flex items-center gap-1 cursor-pointer transition-colors shadow-sm"
+              >
+                <Sparkles className="h-3.5 w-3.5" /> Gallery 🖼️
+              </button>
+              <button
+                type="button"
+                onClick={() => setImagePreview(null)}
+                title="Remove photo"
+                className="bg-black/75 hover:bg-red-600 text-white p-1.5 rounded-lg backdrop-blur-xs cursor-pointer transition-colors shadow-sm"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
         )}
         <label className="relative sm:col-span-2">
@@ -949,6 +1073,60 @@ function getCurrentPositionPromise(options: PositionOptions): Promise<Geolocatio
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Live Webcam Stream Modal */}
+      {showWebcamModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
+          <div className="relative w-full max-w-lg rounded-2xl bg-card border border-border p-4 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Camera className="h-5 w-5 text-bow-forest" />
+                <h3 className="font-display text-lg font-bold">Live Camera Capture</h3>
+              </div>
+              <button
+                type="button"
+                onClick={stopWebcam}
+                className="p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="relative overflow-hidden rounded-xl bg-black aspect-4/3 flex items-center justify-center border border-border">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute bottom-3 left-3 bg-black/70 backdrop-blur-xs text-white text-[0.68rem] px-2.5 py-1 rounded-full font-medium flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                Live Camera Active
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-3 pt-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void openWebcam(facingMode === "environment" ? "user" : "environment")}
+                className="text-xs font-semibold gap-1.5 cursor-pointer"
+              >
+                🔄 Switch Camera
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => void captureWebcamSnapshot()}
+                className="bg-bow-forest hover:bg-bow-forest/90 text-white font-bold px-6 py-2 rounded-xl text-xs gap-1.5 shadow-md cursor-pointer"
+              >
+                <Camera className="h-4 w-4" /> Snap Photo 📸
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </BowCard>

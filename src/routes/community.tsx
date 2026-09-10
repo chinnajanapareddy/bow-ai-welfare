@@ -135,6 +135,7 @@ function Community() {
   const [compressing, setCompressing] = useState(false);
   const [createError, setCreateError] = useState("");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
 
   // Load Posts & User Session
   useEffect(() => {
@@ -407,7 +408,7 @@ function Community() {
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      <label className="upload-tile cursor-pointer flex flex-col items-center justify-center py-6 text-center border-2 border-dashed border-bow-brown/30 bg-bow-sand/40 hover:border-bow-brown rounded-xl">
+                      <div className="space-y-2">
                         <input
                           ref={fileInputRef}
                           type="file"
@@ -415,14 +416,42 @@ function Community() {
                           onChange={handlePhotoSelect}
                           className="sr-only"
                         />
-                        <Camera className="h-8 w-8 text-bow-brown mb-2" />
-                        <span className="text-xs font-semibold text-bow-forest">
-                          {compressing ? "Compressing photo..." : "Take or Choose a Dog Photo 📷"}
-                        </span>
-                        <span className="text-[0.68rem] text-muted-foreground mt-0.5">
-                          High quality compressed automatically for mobile
-                        </span>
-                      </label>
+                        <input
+                          ref={cameraInputRef}
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          onChange={handlePhotoSelect}
+                          className="sr-only"
+                        />
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => cameraInputRef.current?.click()}
+                            className="flex flex-col items-center justify-center p-3.5 rounded-xl border-2 border-dashed border-bow-brown/40 bg-bow-sand/50 hover:bg-bow-sand hover:border-bow-brown transition-all cursor-pointer group text-center"
+                          >
+                            <Camera className="h-6 w-6 text-bow-forest group-hover:scale-110 transition-transform mb-1" />
+                            <span className="text-xs font-bold text-bow-forest">Take Live Photo 📷</span>
+                            <span className="text-[0.62rem] text-muted-foreground mt-0.5">Mobile Camera</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="flex flex-col items-center justify-center p-3.5 rounded-xl border-2 border-dashed border-border bg-background hover:bg-muted/40 transition-all cursor-pointer group text-center"
+                          >
+                            <Camera className="h-6 w-6 text-bow-brown group-hover:scale-110 transition-transform mb-1" />
+                            <span className="text-xs font-bold text-foreground">Choose Gallery 🖼️</span>
+                            <span className="text-[0.62rem] text-muted-foreground mt-0.5">Photo Library</span>
+                          </button>
+                        </div>
+                        {compressing && (
+                          <p className="text-[0.68rem] text-amber-700 font-medium text-center animate-pulse">
+                            ⚡ Optimizing and compressing photo for mobile upload...
+                          </p>
+                        )}
+                      </div>
 
                       {/* Sample Street Dog Quick Selector */}
                       <div>
