@@ -199,89 +199,101 @@ function SiteChrome({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-bow-ivory text-foreground">
       <WelcomeScreen />
-      <header className="sticky top-0 z-50 border-b border-border/60 bg-bow-ivory/95 backdrop-blur-md transition-all duration-300">
-        <div className="mx-auto flex h-[68px] max-w-[1400px] items-center justify-between px-4 sm:px-8">
-          <BowLogo />
-          <nav className="hidden items-center gap-1 xl:gap-1.5 lg:flex">
-            {navItems.map(({ label, href, icon: Icon, alert }) => (
-              <Link
-                key={href}
-                to={href}
-                className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-foreground/75 transition-all duration-200 hover:text-foreground hover:bg-bow-sand/60 cursor-pointer"
-                activeProps={{
-                  className:
-                    "bg-bow-forest text-primary-foreground font-bold shadow-2xs hover:text-primary-foreground hover:bg-bow-forest scale-102 transition-all duration-200",
-                }}
-              >
-                {({ isActive }) => (
-                  <>
-                    <Icon
-                      className={`h-3.5 w-3.5 transition-transform duration-200 group-hover:scale-110 ${
-                        isActive ? "text-amber-300" : "text-bow-brown group-hover:text-bow-forest"
-                      }`}
-                    />
-                    <span>{label}</span>
-                    {alert && !isActive && (
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
-                      </span>
-                    )}
-                    {isActive && (
-                      <span className="ml-0.5 text-[0.65rem]">🐾</span>
-                    )}
-                  </>
-                )}
-              </Link>
-            ))}
-          </nav>
-          <div className="hidden items-center gap-3 sm:flex">
+      <header className="sticky top-3 z-50 px-3 sm:px-6 mx-auto max-w-[1400px] transition-all duration-300">
+        <div className="flex items-center justify-between gap-3">
+          {/* Left Pill: Status & Availability Indicator */}
+          <div className="hidden md:flex items-center gap-2 bg-bow-paper/95 backdrop-blur-md border border-border/80 px-4 py-2 rounded-full shadow-md text-xs font-semibold text-foreground">
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span>24/7 Rescue Network</span>
+          </div>
+
+          {/* Center Pill: Floating Navigation Capsule */}
+          <div className="flex items-center gap-2 bg-bow-paper/95 backdrop-blur-md border border-border/80 p-1.5 pl-2 rounded-full shadow-lg">
+            <Link
+              to="/"
+              className="grid h-9 w-9 place-items-center rounded-full bg-foreground text-background shadow-xs transition-transform hover:scale-105"
+              aria-label="BOW Home"
+            >
+              <PawPrint className="h-5 w-5 text-bow-gold" strokeWidth={2.2} />
+            </Link>
+            <span className="font-display text-xl font-bold tracking-tight text-foreground pr-2 hidden sm:inline lg:hidden xl:inline">
+              BOW
+            </span>
+
+            <nav className="hidden lg:flex items-center gap-1 xl:gap-1.5">
+              {navItems.map(({ label, href, icon: Icon, alert }) => (
+                <Link
+                  key={href}
+                  to={href}
+                  className="group relative flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold text-foreground/80 transition-all duration-200 hover:text-foreground hover:bg-bow-sand/60 cursor-pointer"
+                  activeProps={{
+                    className:
+                      "bg-foreground text-background font-bold shadow-xs hover:text-background hover:bg-foreground scale-102 transition-all duration-200",
+                  }}
+                >
+                  {({ isActive }) => (
+                    <>
+                      <span>{label}</span>
+                      {alert && !isActive && (
+                        <span className="relative flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+                        </span>
+                      )}
+                    </>
+                  )}
+                </Link>
+              ))}
+            </nav>
+
+            {/* Mobile Hamburger Toggle inside center pill */}
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={menuOpen ? "Close menu" : "Open menu"}
+              className="rounded-full lg:hidden h-8 w-8 text-foreground"
+              onClick={() => setMenuOpen(!menuOpen)}
+            >
+              {menuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </Button>
+          </div>
+
+          {/* Right Action Pill: User Session / Signup Buttons */}
+          <div className="hidden sm:flex items-center gap-2">
             {userSession ? (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <Link
                   to="/profile"
-                  className="flex items-center gap-2 rounded-full bg-bow-sand/90 px-3.5 py-1.5 border border-bow-brown/20 text-xs text-foreground hover:bg-bow-sand transition-all hover:scale-102 cursor-pointer shadow-2xs"
+                  className="flex items-center gap-2 rounded-full bg-bow-paper/95 backdrop-blur-md px-4 py-2 border border-border/80 text-xs font-semibold text-foreground hover:bg-bow-sand transition-all shadow-md cursor-pointer"
                 >
                   <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                   <span className="font-bold text-bow-forest">{userSession.name}</span>
-                  <span className="text-[0.65rem] px-2 py-0.5 rounded-full bg-bow-forest text-primary-foreground font-semibold">
-                    {userSession.role}
-                  </span>
                 </Link>
                 <Button
                   onClick={handleLogout}
                   variant="outline"
-                  className="h-9 rounded-full px-4 text-xs cursor-pointer text-muted-foreground hover:text-foreground hover:bg-red-50 hover:border-red-200 transition-all"
+                  className="h-9 rounded-full px-4 text-xs cursor-pointer text-muted-foreground hover:text-foreground hover:bg-red-50 hover:border-red-200 shadow-xs"
                 >
                   Logout
                 </Button>
               </div>
             ) : (
-              <>
-                <Button asChild variant="outline" className="h-9 rounded-full px-4 text-xs font-semibold hover:border-bow-forest/40 hover:bg-bow-sand/60 transition-all hover:scale-102">
+              <div className="flex items-center gap-2">
+                <Button asChild variant="outline" className="h-9 rounded-full bg-bow-paper/90 backdrop-blur-md px-4 text-xs font-semibold border-border/80 shadow-md hover:bg-bow-sand transition-all">
                   <Link to="/login">Login</Link>
                 </Button>
                 <Button
                   asChild
-                  className="h-9 rounded-full bg-bow-forest px-5 text-xs font-bold text-primary-foreground shadow-xs hover:bg-bow-forest/90 hover:scale-105 active:scale-95 transition-all"
+                  className="h-9 rounded-full bg-bow-forest px-5 text-xs font-bold text-primary-foreground shadow-md hover:bg-bow-forest/90 hover:scale-105 active:scale-95 transition-all"
                 >
                   <Link to="/signup" className="flex items-center gap-1">
                     <span>Join BOW</span>
                     <span className="text-amber-300">🐾</span>
                   </Link>
                 </Button>
-              </>
+              </div>
             )}
           </div>
-          <Button
-            variant="outline"
-            size="icon"
-            aria-label={menuOpen ? "Close menu" : "Open menu"}
-            className="rounded-full lg:hidden"
-            onClick={() => setMenuOpen(!menuOpen)}
-          >
-            {menuOpen ? <X /> : <Menu />}
-          </Button>
         </div>
         {menuOpen && (
           <div className="border-t border-border bg-bow-paper/95 backdrop-blur-lg px-5 py-5 lg:hidden animate-in slide-in-from-top-2 duration-200">
