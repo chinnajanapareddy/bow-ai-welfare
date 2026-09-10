@@ -71,16 +71,18 @@ export function ActionLink({
   to,
   children,
   variant = "default",
+  className,
 }: {
   to: string;
   children: React.ReactNode;
   variant?: "default" | "outline";
+  className?: string;
 }) {
   return (
     <Button
       asChild
       variant={variant === "outline" ? "outline" : "default"}
-      className="h-12 rounded-lg px-5 text-[0.78rem] tracking-[0.01em]"
+      className={cn("h-12 rounded-lg px-5 text-[0.78rem] tracking-[0.01em]", className)}
     >
       <Link to={to}>
         {children}

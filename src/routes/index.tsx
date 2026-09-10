@@ -66,8 +66,10 @@ function Home() {
               Technology that turns compassion into meaningful action.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <ActionLink to="/report">Report a Dog</ActionLink>
-              <ActionLink to="/community" variant="outline">
+              <ActionLink to="/report" className="bg-bow-forest text-primary-foreground hover:bg-bow-forest/90 border border-bow-sand/20 shadow-md">
+                Report a Dog
+              </ActionLink>
+              <ActionLink to="/community" variant="outline" className="bg-bow-paper/95 text-bow-forest hover:bg-white hover:text-bow-forest border border-bow-sand/40 font-bold shadow-md">
                 Explore Stories
               </ActionLink>
             </div>
