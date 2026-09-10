@@ -144,7 +144,7 @@ function Rescue() {
       createdAt: new Date().toISOString(),
       timeAgo: "15m ago",
       email: "community@bow.org",
-      imageUrl: undefined as string | undefined,
+      imageUrl: c.imageUrl,
       confidence: 94,
       indicators: ["Mobility issue detected", "Posture anomaly", "Location confirmed"],
       whyPriority: "Assigned based on visual cues and incident urgency.",
@@ -425,6 +425,10 @@ function Rescue() {
                           <img
                             src={item.imageUrl}
                             alt={item.id}
+                            loading="lazy"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1768386629359-806f0fe996dc?auto=format&fit=crop&q=80&w=800";
+                            }}
                             className="h-32 sm:h-36 w-full sm:w-44 object-cover rounded-lg border border-border shrink-0 shadow-2xs"
                           />
                         ) : (
@@ -554,6 +558,10 @@ function Rescue() {
                       <img
                         src={selectedCase.imageUrl}
                         alt={`Dog rescue case ${selectedCase.id}`}
+                        loading="lazy"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1768386629359-806f0fe996dc?auto=format&fit=crop&q=80&w=800";
+                        }}
                         className="h-56 w-full object-cover"
                       />
                     </div>

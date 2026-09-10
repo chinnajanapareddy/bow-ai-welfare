@@ -260,6 +260,7 @@ export async function initializeSqliteDatabase() {
       priority: "High",
       status: "OPEN",
       createdAt: new Date(Date.now() - 18 * 60 * 1000).toISOString(),
+      imageUrl: "https://images.unsplash.com/photo-1768386629359-806f0fe996dc?auto=format&fit=crop&q=80&w=800",
       confidence: 94,
       indicators: ["Mobility restriction signal", "Abnormal posture indicator", "Location verified"],
       whyPriority: "High Priority assigned because detected visual cues suggest mobility limitation.",
@@ -275,6 +276,7 @@ export async function initializeSqliteDatabase() {
       priority: "Medium",
       status: "OPEN",
       createdAt: new Date(Date.now() - 42 * 60 * 1000).toISOString(),
+      imageUrl: "https://images.unsplash.com/photo-1632090841068-41088be12ce9?auto=format&fit=crop&q=80&w=800",
       confidence: 91,
       indicators: ["Nutritional deficit signal", "Location confirmed"],
       whyPriority: "Medium Priority assigned based on posture and nutritional needs.",
@@ -290,6 +292,7 @@ export async function initializeSqliteDatabase() {
       priority: "Low",
       status: "OPEN",
       createdAt: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+      imageUrl: "https://images.unsplash.com/photo-1659292692984-4787c010746f?auto=format&fit=crop&q=80&w=800",
       confidence: 88,
       indicators: ["Routine welfare check", "Stable posture"],
       whyPriority: "Low Priority assigned due to stable posture and calm demeanor.",
@@ -305,6 +308,7 @@ export async function initializeSqliteDatabase() {
       priority: "High",
       status: "OPEN",
       createdAt: new Date(Date.now() - 120 * 60 * 1000).toISOString(),
+      imageUrl: "https://images.unsplash.com/photo-1633512227626-a1f547fc6de3?auto=format&fit=crop&q=80&w=800",
       confidence: 95,
       indicators: ["Abnormal posture", "High traffic exposure"],
       whyPriority: "High Priority assigned due to proximity to traffic and limb weakness.",
@@ -313,7 +317,7 @@ export async function initializeSqliteDatabase() {
   ];
 
   const reportStmt = db.prepare(
-    "INSERT OR IGNORE INTO reports (id, email, location, description, voiceText, concern, priority, status, createdAt, confidence, indicators, whyPriority, immediateActions) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    "INSERT OR IGNORE INTO reports (id, email, location, description, voiceText, concern, priority, status, createdAt, imageUrl, confidence, indicators, whyPriority, immediateActions) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
   );
 
   for (const r of initialReports) {
@@ -327,6 +331,7 @@ export async function initializeSqliteDatabase() {
       r.priority,
       r.status,
       r.createdAt,
+      r.imageUrl,
       r.confidence,
       JSON.stringify(r.indicators),
       r.whyPriority,

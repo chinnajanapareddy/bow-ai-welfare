@@ -313,6 +313,10 @@ function Profile() {
                             <img
                               src={report.imageUrl}
                               alt={`Reported dog ${report.id}`}
+                              loading="lazy"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1768386629359-806f0fe996dc?auto=format&fit=crop&q=80&w=800";
+                              }}
                               className="h-36 w-full sm:w-40 object-cover rounded-lg border border-border shrink-0 shadow-2xs"
                             />
                           ) : (
@@ -464,6 +468,10 @@ function Profile() {
                         <img
                           src={report.imageUrl}
                           alt={report.id}
+                          loading="lazy"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1768386629359-806f0fe996dc?auto=format&fit=crop&q=80&w=800";
+                          }}
                           className="h-44 w-full object-cover rounded-lg border border-border shadow-2xs"
                         />
                       ) : (

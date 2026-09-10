@@ -135,7 +135,7 @@ export function BowCard({
   return <div className={cn("bow-card", className)}>{children}</div>;
 }
 
-function compressImageForAi(dataUrl: string, maxDim = 800): Promise<string> {
+function compressImageForAi(dataUrl: string, maxDim = 600): Promise<string> {
   return new Promise((resolve) => {
     if (!dataUrl || !dataUrl.startsWith("data:")) {
       resolve(dataUrl);
@@ -162,7 +162,7 @@ function compressImageForAi(dataUrl: string, maxDim = 800): Promise<string> {
       const ctx = canvas.getContext("2d");
       if (ctx) {
         ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL("image/jpeg", 0.8));
+        resolve(canvas.toDataURL("image/jpeg", 0.65));
       } else {
         resolve(dataUrl);
       }

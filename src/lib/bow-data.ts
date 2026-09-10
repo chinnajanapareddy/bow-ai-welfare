@@ -96,7 +96,8 @@ export const cases = [
     time: "18 min ago",
     indicator: "Possible injury",
     team: "Team A",
-    status: "Reviewed",
+    status: "OPEN",
+    imageUrl: "https://images.unsplash.com/photo-1768386629359-806f0fe996dc?auto=format&fit=crop&q=80&w=800",
   },
   {
     id: "PC-1042",
@@ -105,7 +106,8 @@ export const cases = [
     time: "42 min ago",
     indicator: "Needs food support",
     team: "Unassigned",
-    status: "Reported",
+    status: "OPEN",
+    imageUrl: "https://images.unsplash.com/photo-1632090841068-41088be12ce9?auto=format&fit=crop&q=80&w=800",
   },
   {
     id: "PC-1038",
@@ -114,7 +116,8 @@ export const cases = [
     time: "1 hr ago",
     indicator: "Routine follow-up",
     team: "Team C",
-    status: "Intervention",
+    status: "OPEN",
+    imageUrl: "https://images.unsplash.com/photo-1659292692984-4787c010746f?auto=format&fit=crop&q=80&w=800",
   },
   {
     id: "PC-1029",
@@ -123,7 +126,8 @@ export const cases = [
     time: "2 hrs ago",
     indicator: "Abnormal posture",
     team: "Team B",
-    status: "Assigned",
+    status: "OPEN",
+    imageUrl: "https://images.unsplash.com/photo-1633512227626-a1f547fc6de3?auto=format&fit=crop&q=80&w=800",
   },
 ];
 
