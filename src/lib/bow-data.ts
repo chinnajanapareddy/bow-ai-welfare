@@ -131,6 +131,118 @@ export const cases = [
   },
 ];
 
+export type CommunityComment = {
+  id: string;
+  author: string;
+  avatar?: string;
+  text: string;
+  createdAt: string;
+};
+
+export type CommunityPost = {
+  id: string;
+  authorName: string;
+  authorRole: string;
+  authorAvatar?: string;
+  location: string;
+  createdAt: string;
+  tag: string;
+  title: string;
+  caption: string;
+  image: string;
+  likes: number;
+  comments: CommunityComment[];
+};
+
+export const initialCommunityPosts: CommunityPost[] = [
+  {
+    id: "post-1",
+    authorName: "Ananya Rao",
+    authorRole: "Volunteer Coordinator",
+    location: "Besant Nagar, Chennai",
+    createdAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+    tag: "Rescue Story",
+    title: "Bruno's Miraculous Second Chance 🐾",
+    caption: "Rescued Bruno near the bus depot with severe weakness. After 3 weeks of dedicated care, medical treatment, and nutritious meals, he's back on his feet and full of love!",
+    image: "https://images.unsplash.com/photo-1768386629359-806f0fe996dc?auto=format&fit=crop&q=80&w=800",
+    likes: 148,
+    comments: [
+      {
+        id: "c-1",
+        author: "Karthik Raja",
+        text: "Thank you for taking care of Bruno! He looks so healthy and happy now.",
+        createdAt: new Date(Date.now() - 90 * 60 * 1000).toISOString(),
+      },
+      {
+        id: "c-2",
+        author: "Meera Krishnan",
+        text: "What an amazing transformation! Sending lots of love to the rescue team. ❤️",
+        createdAt: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
+      },
+    ],
+  },
+  {
+    id: "post-2",
+    authorName: "Rahul Sharma",
+    authorRole: "Community Champion",
+    location: "Indiranagar, Bengaluru",
+    createdAt: new Date(Date.now() - 5 * 3600 * 1000).toISOString(),
+    tag: "Food Support",
+    title: "Sunday Neighborhood Feeding Drive 🍲",
+    caption: "Celebrated my birthday by serving 40 fresh, unseasoned rice & chicken meals to our local street dogs in Indiranagar. Small actions create big smiles!",
+    image: "https://images.unsplash.com/photo-1632090841068-41088be12ce9?auto=format&fit=crop&q=80&w=800",
+    likes: 94,
+    comments: [
+      {
+        id: "c-3",
+        author: "Priya Nair",
+        text: "Happy Birthday Rahul! This is the best way to celebrate 🎉",
+        createdAt: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
+      },
+    ],
+  },
+  {
+    id: "post-3",
+    authorName: "Dr. Vikram Seth",
+    authorRole: "Veterinary Partner",
+    location: "Kothrud, Pune",
+    createdAt: new Date(Date.now() - 12 * 3600 * 1000).toISOString(),
+    tag: "Recovery Update",
+    title: "Day 21 Recovery: Sweet Luna is Healing!",
+    caption: "From day 1 rescue to day 21 routine checkup — Luna's skin infection has completely cleared up and her tail hasn't stopped wagging all morning!",
+    image: "https://images.unsplash.com/photo-1659292692984-4787c010746f?auto=format&fit=crop&q=80&w=800",
+    likes: 215,
+    comments: [
+      {
+        id: "c-4",
+        author: "Siddharth Joshi",
+        text: "Kudos to Dr. Vikram and the BOW Pune team!",
+        createdAt: new Date(Date.now() - 8 * 3600 * 1000).toISOString(),
+      },
+    ],
+  },
+  {
+    id: "post-4",
+    authorName: "Sanjana Roy",
+    authorRole: "Adoptive Parent",
+    location: "Hauz Khas, Delhi",
+    createdAt: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
+    tag: "Adoption Story",
+    title: "Coco Found Her Forever Home 🏡",
+    caption: "Coco was rescued as a tiny street pup in Delhi. Today she officially joined our family! Street souls bring the purest joy into a home.",
+    image: "https://images.unsplash.com/photo-1598133894008-61f7fdb8cc3a?auto=format&fit=crop&q=80&w=800",
+    likes: 182,
+    comments: [
+      {
+        id: "c-5",
+        author: "Ananya Rao",
+        text: "Welcome to your forever home Coco! 🐾✨",
+        createdAt: new Date(Date.now() - 18 * 3600 * 1000).toISOString(),
+      },
+    ],
+  },
+];
+
 export const stories = [
   {
     title: "Bruno's Second Chance",
