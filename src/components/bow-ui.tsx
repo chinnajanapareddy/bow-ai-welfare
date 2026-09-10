@@ -351,6 +351,12 @@ async function resolveLocationAddress(lat: number, lng: number): Promise<string>
   return `GPS Location (${latFixed}, ${lngFixed})`;
 }
 
+function getCurrentPositionPromise(options: PositionOptions): Promise<GeolocationPosition> {
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(resolve, reject, options);
+  });
+}
+
   const handleLocateClick = async () => {
     if (!navigator.geolocation) {
       setError("Geolocation is not supported by your browser.");
@@ -361,40 +367,97 @@ async function resolveLocationAddress(lat: number, lng: number): Promise<string>
     setLocSuccess(false);
     setError("");
 
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
+    let pos: GeolocationPosition | null = null;
+    let lastErr: any = null;
 
-        try {
-          const resolved = await resolveLocationAddress(lat, lng);
-          setLocation(resolved);
-          setLocSuccess(true);
-        } catch {
-          setLocation(`GPS Location (${lat.toFixed(5)}, ${lng.toFixed(5)})`);
-          setLocSuccess(true);
-        } finally {
-          setLocating(false);
-        }
-      },
-      (err) => {
-        setLocating(false);
-        let errMsg = "Unable to retrieve GPS location.";
-        if (err.code === err.PERMISSION_DENIED) {
-          errMsg = "Location permission denied. Please enter address manually.";
-        } else if (err.code === err.POSITION_UNAVAILABLE) {
-          errMsg = "GPS position unavailable. Please enter location manually.";
-        } else if (err.code === err.TIMEOUT) {
-          errMsg = "GPS request timed out. Please try again or enter location manually.";
-        }
-        setError(errMsg);
-      },
-      {
+    // Attempt 1: High accuracy with 5s timeout & 1 min cached age (fast satellite/GPS if outdoor/cached)
+    try {
+      pos = await getCurrentPositionPromise({
         enableHighAccuracy: true,
-        timeout: 12000,
-        maximumAge: 0,
-      },
-    );
+        timeout: 5000,
+        maximumAge: 60000,
+      });
+    } catch (err: any) {
+      lastErr = err;
+      if (err?.code !== err?.PERMISSION_DENIED) {
+        // Attempt 2: Standard accuracy (Cell/Wi-Fi/Fused location) - works fast indoors on mobile
+        try {
+          pos = await getCurrentPositionPromise({
+            enableHighAccuracy: false,
+            timeout: 8000,
+            maximumAge: 300000,
+          });
+        } catch (err2: any) {
+          lastErr = err2;
+          // Attempt 3: Standard accuracy with system-cached location
+          try {
+            pos = await getCurrentPositionPromise({
+              enableHighAccuracy: false,
+              timeout: 6000,
+              maximumAge: Infinity,
+            });
+          } catch (err3: any) {
+            lastErr = err3;
+          }
+        }
+      }
+    }
+
+    if (pos) {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+
+      try {
+        const resolved = await resolveLocationAddress(lat, lng);
+        setLocation(resolved);
+        setLocSuccess(true);
+      } catch {
+        setLocation(`GPS Location (${lat.toFixed(5)}, ${lng.toFixed(5)})`);
+        setLocSuccess(true);
+      } finally {
+        setLocating(false);
+      }
+      return;
+    }
+
+    // Fallback 4: IP-based approximate location lookup if mobile hardware sensors timed out/failed
+    if (lastErr && lastErr.code !== lastErr.PERMISSION_DENIED) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const res = await fetch("https://api.bigdatacloud.net/data/reverse-geocode-client", {
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        if (res.ok) {
+          const data = await res.json();
+          const city = data.city || data.locality || "";
+          const state = data.principalSubdivision || "";
+          const country = data.countryName || "";
+          const lat = data.latitude;
+          const lng = data.longitude;
+          const parts = Array.from(new Set([city, state, country].filter(Boolean)));
+          if (parts.length > 0) {
+            const coordStr = lat && lng ? ` (${lat.toFixed(4)}, ${lng.toFixed(4)})` : "";
+            setLocation(`${parts.join(", ")}${coordStr}`);
+            setLocSuccess(true);
+            setLocating(false);
+            return;
+          }
+        }
+      } catch {}
+    }
+
+    setLocating(false);
+    let errMsg = "Unable to retrieve GPS location.";
+    if (lastErr?.code === lastErr?.PERMISSION_DENIED) {
+      errMsg = "Location permission denied. Please allow location access or enter address manually.";
+    } else if (lastErr?.code === lastErr?.POSITION_UNAVAILABLE) {
+      errMsg = "GPS position unavailable. Please enter location manually.";
+    } else if (lastErr?.code === lastErr?.TIMEOUT) {
+      errMsg = "GPS request timed out. Please enter location manually.";
+    }
+    setError(errMsg);
   };
 
   const handleAutoGenerateDescription = async () => {
