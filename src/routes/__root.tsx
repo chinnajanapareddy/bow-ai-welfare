@@ -225,14 +225,16 @@ function SiteChrome({ children }: { children: ReactNode }) {
                 <Link
                   key={href}
                   to={href}
-                  className="group relative flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold text-foreground/80 transition-all duration-200 hover:text-foreground hover:bg-bow-sand/60 cursor-pointer"
-                  activeProps={{
-                    className:
-                      "bg-foreground text-background font-bold shadow-xs hover:text-background hover:bg-foreground scale-102 transition-all duration-200",
-                  }}
+                  className="group relative cursor-pointer focus:outline-none"
                 >
                   {({ isActive }) => (
-                    <>
+                    <span
+                      className={`flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 ${
+                        isActive
+                          ? "bg-bow-forest text-white font-bold shadow-sm"
+                          : "text-foreground/80 hover:text-foreground hover:bg-bow-sand/70"
+                      }`}
+                    >
                       <span>{label}</span>
                       {alert && !isActive && (
                         <span className="relative flex h-2 w-2">
@@ -240,7 +242,8 @@ function SiteChrome({ children }: { children: ReactNode }) {
                           <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
                         </span>
                       )}
-                    </>
+                      {isActive && <span className="ml-0.5 text-[0.68rem] text-amber-300">🐾</span>}
+                    </span>
                   )}
                 </Link>
               ))}
@@ -303,13 +306,16 @@ function SiteChrome({ children }: { children: ReactNode }) {
                   key={href}
                   to={href}
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold text-foreground transition-all hover:bg-bow-sand cursor-pointer"
-                  activeProps={{
-                    className: "bg-bow-forest text-primary-foreground font-bold shadow-xs hover:bg-bow-forest hover:text-primary-foreground",
-                  }}
+                  className="cursor-pointer font-semibold"
                 >
                   {({ isActive }) => (
-                    <>
+                    <div
+                      className={`flex items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold transition-all ${
+                        isActive
+                          ? "bg-bow-forest text-white font-bold shadow-sm"
+                          : "text-foreground hover:bg-bow-sand"
+                      }`}
+                    >
                       <div className="flex items-center gap-3">
                         <Icon className={`h-4 w-4 ${isActive ? "text-amber-300" : "text-bow-brown"}`} />
                         <span>{label}</span>
@@ -319,10 +325,8 @@ function SiteChrome({ children }: { children: ReactNode }) {
                           Urgent Triage
                         </span>
                       )}
-                      {isActive && (
-                        <span className="text-sm animate-bounce">🐾</span>
-                      )}
-                    </>
+                      {isActive && <span className="text-sm text-amber-300">🐾</span>}
+                    </div>
                   )}
                 </Link>
               ))}
