@@ -18,6 +18,7 @@ import {
   Utensils,
 } from "@/components/bow-icons";
 import { getProfileServerFn, type BowReport } from "@/lib/bow-backend.server";
+import { getReportPhoto } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/profile")({
@@ -315,11 +316,7 @@ function Profile() {
                         {/* Dog Photo & Details */}
                         <div className="flex flex-col sm:flex-row gap-4">
                           <img
-                            src={
-                              report.imageUrl && report.imageUrl.trim().length > 0
-                                ? report.imageUrl
-                                : "https://images.unsplash.com/photo-1768386629359-806f0fe996dc?auto=format&fit=crop&q=80&w=800"
-                            }
+                            src={getReportPhoto(report.id, report.imageUrl)}
                             alt={`Reported dog ${report.id}`}
                             loading="lazy"
                             onError={(e) => {

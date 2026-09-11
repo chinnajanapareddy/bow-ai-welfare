@@ -11,7 +11,7 @@ import {
   generateDogDescriptionServerFn,
   getReportByIdServerFn,
 } from "@/lib/bow-backend.server";
-import { cn } from "@/lib/utils";
+import { cn, getReportPhoto, saveReportPhoto } from "@/lib/utils";
 import dogCardImage from "@/assets/bow-dog-card.jpg";
 import storyCardImage from "@/assets/bow-story-card.jpg";
 
@@ -317,7 +317,10 @@ export function ReportForm({
       try {
         const res = await getReportByIdFn({ data: { id: lastReport.id } });
         if (res.ok && res.report) {
-          setLastReport(res.report);
+          setLastReport({
+            ...res.report,
+            imageUrl: getReportPhoto(res.report.id, res.report.imageUrl),
+          });
         }
       } catch (err) {
         console.warn("Error checking report status", err);
@@ -608,6 +611,11 @@ function getCurrentPositionPromise(options: PositionOptions): Promise<Geolocatio
             if (!idsArray.includes(result.report.id)) {
               window.localStorage.setItem("bow-user-report-ids", JSON.stringify([result.report.id, ...idsArray]));
             }
+
+            const userPhoto = imageToSend || imagePreview;
+            if (userPhoto && userPhoto.length > 20) {
+              saveReportPhoto(result.report.id, userPhoto);
+            }
           } catch {}
         }
 
@@ -633,14 +641,10 @@ function getCurrentPositionPromise(options: PositionOptions): Promise<Geolocatio
         };
 
         if (result.report) {
-          const reportWithUserPhoto = {
+          setLastReport({
             ...result.report,
-            imageUrl:
-              (imageToSend && imageToSend.length > 20) || (imagePreview && imagePreview.length > 20)
-                ? imageToSend || imagePreview!
-                : result.report.imageUrl,
-          };
-          setLastReport(reportWithUserPhoto);
+            imageUrl: getReportPhoto(result.report.id, result.report.imageUrl),
+          });
         }
         setSubmitted(true);
         setError("");
@@ -1021,7 +1025,12 @@ function getCurrentPositionPromise(options: PositionOptions): Promise<Geolocatio
                     if (!lastReport?.id) return;
                     try {
                       const res = await getReportByIdFn({ data: { id: lastReport.id } });
-                      if (res.ok && res.report) setLastReport(res.report);
+                      if (res.ok && res.report) {
+                        setLastReport({
+                          ...res.report,
+                          imageUrl: getReportPhoto(res.report.id, res.report.imageUrl),
+                        });
+                      }
                     } catch {}
                   }}
                   className="text-[0.72rem] text-emerald-700 hover:text-emerald-900 font-semibold underline cursor-pointer"
@@ -1031,10 +1040,10 @@ function getCurrentPositionPromise(options: PositionOptions): Promise<Geolocatio
               </div>
 
               {/* Uploaded Dog Photo Display */}
-              {(lastReport.imageUrl || imagePreview) && (
+              {lastReport && (
                 <div className="overflow-hidden rounded-lg border border-emerald-200 shadow-2xs">
                   <img
-                    src={lastReport.imageUrl || imagePreview!}
+                    src={getReportPhoto(lastReport.id, lastReport.imageUrl)}
                     alt={`Reported dog ${lastReport.id}`}
                     className="h-48 w-full object-cover"
                   />

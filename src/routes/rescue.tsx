@@ -29,6 +29,7 @@ import {
   type BowReport,
   type RescueUpdate,
 } from "@/lib/bow-backend.server";
+import { getReportPhoto } from "@/lib/utils";
 
 export const Route = createFileRoute("/rescue")({
   head: () => ({
@@ -422,11 +423,7 @@ function Rescue() {
                       <div className="flex flex-col sm:flex-row gap-4">
                         {/* Image Thumbnail */}
                         <img
-                          src={
-                            item.imageUrl && item.imageUrl.trim().length > 0
-                              ? item.imageUrl
-                              : "https://images.unsplash.com/photo-1768386629359-806f0fe996dc?auto=format&fit=crop&q=80&w=800"
-                          }
+                          src={getReportPhoto(item.id, item.imageUrl)}
                           alt={item.id}
                           loading="lazy"
                           onError={(e) => {
@@ -552,23 +549,17 @@ function Rescue() {
                   </div>
 
                   {/* High-res Dog Image */}
-                  {selectedCase.imageUrl ? (
-                    <div className="overflow-hidden rounded-xl border border-border shadow-xs">
-                      <img
-                        src={selectedCase.imageUrl}
-                        alt={`Dog rescue case ${selectedCase.id}`}
-                        loading="lazy"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1768386629359-806f0fe996dc?auto=format&fit=crop&q=80&w=800";
-                        }}
-                        className="h-56 w-full object-cover"
-                      />
-                    </div>
-                  ) : (
-                    <div className="h-40 w-full bg-bow-sand rounded-xl border border-border flex items-center justify-center text-xs text-muted-foreground">
-                      No photo attached to this report
-                    </div>
-                  )}
+                  <div className="overflow-hidden rounded-xl border border-border shadow-xs">
+                    <img
+                      src={getReportPhoto(selectedCase.id, selectedCase.imageUrl)}
+                      alt={`Dog rescue case ${selectedCase.id}`}
+                      loading="lazy"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1768386629359-806f0fe996dc?auto=format&fit=crop&q=80&w=800";
+                      }}
+                      className="h-56 w-full object-cover"
+                    />
+                  </div>
 
                   {/* AI Welfare Analysis */}
                   <div className="rounded-xl border border-bow-forest/20 bg-bow-sand/40 p-4 space-y-3">
