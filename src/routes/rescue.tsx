@@ -24,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   acceptCaseServerFn,
   askBowAiServerFn,
+  clearReportsServerFn,
   getReportsServerFn,
   updateCaseStatusServerFn,
   type BowReport,
@@ -134,10 +135,26 @@ function Rescue() {
   const askBowAiFn = useServerFn(askBowAiServerFn);
   const acceptCaseFn = useServerFn(acceptCaseServerFn);
   const updateStatusFn = useServerFn(updateCaseStatusServerFn);
+  const clearReportsFn = useServerFn(clearReportsServerFn);
 
   const [reports, setReports] = useState<BowReport[]>([]);
+  const [isClearing, setIsClearing] = useState(false);
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
   const [filter, setFilter] = useState<"ALL" | "OPEN" | "MY_CASES" | "RESOLVED">("OPEN");
+
+  const handleClearAllCases = async () => {
+    if (!window.confirm("Are you sure you want to clear all rescue cases from the queue?")) return;
+    setIsClearing(true);
+    try {
+      await clearReportsFn({});
+      setReports([]);
+      setSelectedCaseId(null);
+    } catch (err) {
+      console.warn("Failed to clear reports", err);
+    } finally {
+      setIsClearing(false);
+    }
+  };
 
   // User Auth session state
   const [currentUser, setCurrentUser] = useState<{
@@ -509,9 +526,20 @@ function Rescue() {
                   ))}
                 </div>
 
-                <Button variant="ghost" size="sm" onClick={() => void loadReports()} className="text-xs text-muted-foreground">
-                  🔄 Refresh Feed
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => void loadReports()} className="text-xs text-muted-foreground">
+                    🔄 Refresh Feed
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isClearing}
+                    onClick={() => void handleClearAllCases()}
+                    className="text-xs text-red-700 border-red-200 hover:bg-red-50 cursor-pointer"
+                  >
+                    {isClearing ? "Clearing..." : "🧹 Clear All Cases"}
+                  </Button>
+                </div>
               </div>
 
               {/* Case Cards List */}

@@ -259,96 +259,6 @@ export async function initializeSqliteDatabase() {
     db.prepare(
       "INSERT INTO users (id, name, email, password, joined_at, phone, city, role) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
     ).run("demo-user", "Ananya Rao", "hello@bow.org", "demo123", joinedAt, "+91 9876543210", "Chennai", "Volunteer");
-
-  const initialReports = [
-    {
-      id: "PC-1047",
-      email: "hello@bow.org",
-      location: "Besant Nagar, Chennai",
-      description: "Dog showing signs of weakness and a possible injury near the bus stop.",
-      voiceText: "There is a dog near the bus stop and it looks like it cannot walk steadily.",
-      concern: "Possible mobility issue",
-      priority: "High",
-      status: "OPEN",
-      createdAt: new Date(Date.now() - 18 * 60 * 1000).toISOString(),
-      imageUrl: "https://images.unsplash.com/photo-1768386629359-806f0fe996dc?auto=format&fit=crop&q=80&w=800",
-      confidence: 94,
-      indicators: ["Mobility restriction signal", "Abnormal posture indicator", "Location verified"],
-      whyPriority: "High Priority assigned because detected visual cues suggest mobility limitation.",
-      immediateActions: ["Offer fresh drinking water", "Shield from oncoming traffic"],
-    },
-    {
-      id: "PC-1042",
-      email: "community@bow.org",
-      location: "Gandhi Road, Hyderabad",
-      description: "Street dog requiring food support and basic welfare check near main market.",
-      voiceText: "Dog looks malnourished near market area.",
-      concern: "Needs food support",
-      priority: "Medium",
-      status: "OPEN",
-      createdAt: new Date(Date.now() - 42 * 60 * 1000).toISOString(),
-      imageUrl: "https://images.unsplash.com/photo-1632090841068-41088be12ce9?auto=format&fit=crop&q=80&w=800",
-      confidence: 91,
-      indicators: ["Nutritional deficit signal", "Location confirmed"],
-      whyPriority: "Medium Priority assigned based on posture and nutritional needs.",
-      immediateActions: ["Provide unseasoned kibble or rice", "Offer clean water"],
-    },
-    {
-      id: "PC-1038",
-      email: "community@bow.org",
-      location: "Kothrud, Pune",
-      description: "Calm street dog needing routine follow-up check and feeding.",
-      voiceText: "Routine check required.",
-      concern: "Routine follow-up",
-      priority: "Low",
-      status: "OPEN",
-      createdAt: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
-      imageUrl: "https://images.unsplash.com/photo-1659292692984-4787c010746f?auto=format&fit=crop&q=80&w=800",
-      confidence: 88,
-      indicators: ["Routine welfare check", "Stable posture"],
-      whyPriority: "Low Priority assigned due to stable posture and calm demeanor.",
-      immediateActions: ["Provide clean drinking water", "Monitor location"],
-    },
-    {
-      id: "PC-1029",
-      email: "community@bow.org",
-      location: "Indiranagar, Bengaluru",
-      description: "Street dog observed resting with abnormal posture near road curb.",
-      voiceText: "Dog sitting uncomfortably near road curb.",
-      concern: "Abnormal posture",
-      priority: "High",
-      status: "OPEN",
-      createdAt: new Date(Date.now() - 120 * 60 * 1000).toISOString(),
-      imageUrl: "https://images.unsplash.com/photo-1633512227626-a1f547fc6de3?auto=format&fit=crop&q=80&w=800",
-      confidence: 95,
-      indicators: ["Abnormal posture", "High traffic exposure"],
-      whyPriority: "High Priority assigned due to proximity to traffic and limb weakness.",
-      immediateActions: ["Guide dog to safe shaded pavement", "Keep safe distance"],
-    },
-  ];
-
-  const reportStmt = db.prepare(
-    "INSERT OR IGNORE INTO reports (id, email, location, description, voiceText, concern, priority, status, createdAt, imageUrl, confidence, indicators, whyPriority, immediateActions) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-  );
-
-  for (const r of initialReports) {
-    reportStmt.run(
-      r.id,
-      r.email,
-      r.location,
-      r.description,
-      r.voiceText,
-      r.concern,
-      r.priority,
-      r.status,
-      r.createdAt,
-      r.imageUrl,
-      r.confidence,
-      JSON.stringify(r.indicators),
-      r.whyPriority,
-      JSON.stringify(r.immediateActions),
-    );
-  }
   }
 }
 
@@ -884,6 +794,29 @@ export async function getLiveSystemStats(): Promise<{
     dogsAdopted: String(dogsAdopted),
     totalReports,
   };
+}
+
+export async function clearAllReports(): Promise<{ ok: boolean; count: number }> {
+  let count = 0;
+  const db = await getSqliteDb();
+  if (db) {
+    try {
+      const res = db.prepare("DELETE FROM reports").run();
+      count = res.changes;
+    } catch (err) {
+      console.warn("SQLite clearAllReports error", err);
+    }
+  }
+
+  if (DB_MODE === "supabase" && supabase) {
+    try {
+      await supabase.from("reports").delete().neq("id", "");
+    } catch (err) {
+      console.warn("Supabase clearAllReports error", err);
+    }
+  }
+
+  return { ok: true, count };
 }
 
 

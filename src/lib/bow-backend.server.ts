@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import {
   acceptRescueCase,
+  clearAllReports,
   createReport,
   createUser,
   derivePriority,
@@ -438,5 +439,9 @@ export const updateCaseStatusServerFn = createServerFn({ method: "POST" })
 
 export const getSystemStatsServerFn = createServerFn({ method: "GET" }).handler(async () =>
   getLiveSystemStats(),
+);
+
+export const clearReportsServerFn = createServerFn({ method: "POST" }).handler(async () =>
+  clearAllReports(),
 );
 
