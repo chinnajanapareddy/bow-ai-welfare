@@ -202,25 +202,25 @@ function SiteChrome({ children }: { children: ReactNode }) {
       <header className="fixed top-2 left-0 right-0 z-50 px-3 sm:px-6 mx-auto max-w-[1400px] transition-all duration-300">
         <div className="flex items-center justify-between gap-3">
           {/* Left Pill: Status & Availability Indicator */}
-          <div className="hidden md:flex items-center gap-2 bg-bow-paper/95 backdrop-blur-md border border-border/80 px-4 py-2 rounded-full shadow-md text-xs font-semibold text-foreground">
+          <div className="hidden md:flex items-center gap-2 bg-bow-paper/95 backdrop-blur-md border border-border/80 px-3 py-1 rounded-full shadow-md text-xs font-semibold text-foreground">
             <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
             <span>24/7 Rescue Network</span>
           </div>
 
           {/* Center Pill: Floating Navigation Capsule */}
-          <div className="flex items-center gap-2 bg-bow-paper/95 backdrop-blur-md border border-border/80 p-1.5 pl-2 rounded-full shadow-lg">
+          <div className="flex items-center gap-1.5 bg-bow-paper/95 backdrop-blur-md border border-border/80 p-1 pl-1.5 rounded-full shadow-lg">
             <Link
               to="/"
-              className="grid h-9 w-9 place-items-center rounded-full bg-foreground text-background shadow-xs transition-transform hover:scale-105"
+              className="grid h-7 w-7 place-items-center rounded-full bg-foreground text-background shadow-xs transition-transform hover:scale-105"
               aria-label="BOW Home"
             >
-              <PawPrint className="h-5 w-5 text-bow-gold" strokeWidth={2.2} />
+              <PawPrint className="h-4 w-4 text-bow-gold" strokeWidth={2.2} />
             </Link>
-            <span className="font-display text-xl font-bold tracking-tight text-foreground pr-2 hidden sm:inline lg:hidden xl:inline">
+            <span className="font-display text-base font-bold tracking-tight text-foreground pr-1.5 hidden sm:inline lg:hidden xl:inline">
               BOW
             </span>
 
-            <nav className="hidden lg:flex items-center gap-1 xl:gap-1.5">
+            <nav className="hidden lg:flex items-center gap-0.5 xl:gap-1">
               {navItems.map(({ label, href, icon: Icon, alert }) => (
                 <Link
                   key={href}
@@ -229,7 +229,7 @@ function SiteChrome({ children }: { children: ReactNode }) {
                 >
                   {({ isActive }) => (
                     <span
-                      className={`flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 ${
+                      className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200 ${
                         isActive
                           ? "bg-bow-forest text-white font-bold shadow-sm"
                           : "text-foreground/80 hover:text-foreground hover:bg-bow-sand/70"
@@ -267,7 +267,7 @@ function SiteChrome({ children }: { children: ReactNode }) {
               <div className="flex items-center gap-2">
                 <Link
                   to="/profile"
-                  className="flex items-center gap-2 rounded-full bg-bow-paper/95 backdrop-blur-md px-4 py-2 border border-border/80 text-xs font-semibold text-foreground hover:bg-bow-sand transition-all shadow-md cursor-pointer"
+                  className="flex items-center gap-2 rounded-full bg-bow-paper/95 backdrop-blur-md px-3 py-1 border border-border/80 text-xs font-semibold text-foreground hover:bg-bow-sand transition-all shadow-md cursor-pointer"
                 >
                   <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                   <span className="font-bold text-bow-forest">{userSession.name}</span>
@@ -275,19 +275,19 @@ function SiteChrome({ children }: { children: ReactNode }) {
                 <Button
                   onClick={handleLogout}
                   variant="outline"
-                  className="h-9 rounded-full px-4 text-xs cursor-pointer text-muted-foreground hover:text-foreground hover:bg-red-50 hover:border-red-200 shadow-xs"
+                  className="h-7 rounded-full px-3 text-xs cursor-pointer text-muted-foreground hover:text-foreground hover:bg-red-50 hover:border-red-200 shadow-xs"
                 >
                   Logout
                 </Button>
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <Button asChild variant="outline" className="h-9 rounded-full bg-bow-paper/90 backdrop-blur-md px-4 text-xs font-semibold border-border/80 shadow-md hover:bg-bow-sand transition-all">
+                <Button asChild variant="outline" className="h-7 rounded-full bg-bow-paper/90 backdrop-blur-md px-3 text-xs font-semibold border-border/80 shadow-md hover:bg-bow-sand transition-all">
                   <Link to="/login">Login</Link>
                 </Button>
                 <Button
                   asChild
-                  className="h-9 rounded-full bg-bow-forest px-5 text-xs font-bold text-primary-foreground shadow-md hover:bg-bow-forest/90 hover:scale-105 active:scale-95 transition-all"
+                  className="h-7 rounded-full bg-bow-forest px-4 text-xs font-bold text-primary-foreground shadow-md hover:bg-bow-forest/90 hover:scale-105 active:scale-95 transition-all"
                 >
                   <Link to="/signup" className="flex items-center gap-1">
                     <span>Join BOW</span>
