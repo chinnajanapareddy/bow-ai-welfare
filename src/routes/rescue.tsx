@@ -189,8 +189,14 @@ function Rescue() {
         setCurrentUser({ email, name, role: role ?? "Community Member" });
       }
     }
-  }, []);
 
+    // Real-time polling: Refresh database queue every 3 seconds for instant cross-volunteer updates
+    const interval = setInterval(() => {
+      void loadReports();
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const queue = useMemo(() => {
     if (reports.length > 0) {
@@ -224,18 +230,9 @@ function Rescue() {
 
   }, [reports]);
 
-  const isCaseMine = (c: { acceptedBy?: string; acceptedByName?: string; id: string }) => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = window.localStorage.getItem("bow-user-accepted-case-ids");
-        if (stored) {
-          const ids: string[] = JSON.parse(stored);
-          if (ids.includes(c.id)) return true;
-        }
-      } catch {}
-    }
-    if (selectedCaseId === c.id && c.acceptedBy) return true;
-    if (!currentUser) return Boolean(c.acceptedBy);
+  // STRICT DATABASE OWNERSHIP CHECK - No localStorage, No hardcoding, No selectedCaseId override
+  const isCaseMine = (c?: { acceptedBy?: string; acceptedByName?: string; id: string } | null) => {
+    if (!c || !currentUser || !c.acceptedBy) return false;
 
     const userEmail = (currentUser.email || "").toLowerCase().trim();
     const userName = (currentUser.name || "").toLowerCase().trim();
@@ -245,8 +242,8 @@ function Rescue() {
     if (!accBy && !accByName) return false;
 
     return (
-      (accBy.length > 0 && (accBy === userEmail || accBy === userName)) ||
-      (accByName.length > 0 && (accByName === userName || accByName === userEmail))
+      (accBy.length > 0 && (accBy === userEmail || (userName.length > 0 && accBy === userName))) ||
+      (accByName.length > 0 && accByName === userEmail)
     );
   };
 
@@ -254,12 +251,18 @@ function Rescue() {
     if (filter === "OPEN") {
       return queue.filter(
         (c) =>
-          !c.acceptedBy &&
-          ["OPEN", "Sent to rescue team", "Reviewed"].includes(c.displayStatus),
+          (!c.acceptedBy || c.acceptedBy.trim() === "") &&
+          ["OPEN", "open", "Sent to rescue team", "Reviewed"].includes(c.displayStatus),
       );
     }
     if (filter === "MY_CASES") {
-      return queue.filter((c) => isCaseMine(c));
+      return queue.filter(
+        (c) =>
+          isCaseMine(c) &&
+          c.displayStatus !== "RESOLVED" &&
+          c.displayStatus !== "Rescued & Safe" &&
+          c.displayStatus !== "HELP_PROVIDED",
+      );
     }
     if (filter === "RESOLVED") {
       return queue.filter(
@@ -270,7 +273,7 @@ function Rescue() {
       );
     }
     return queue;
-  }, [queue, filter, currentUser, selectedCaseId]);
+  }, [queue, filter, currentUser]);
 
   const selectedCase = useMemo(() => {
     if (selectedCaseId) {
@@ -298,7 +301,7 @@ function Rescue() {
     }, 500);
   };
 
-  // CRITICAL SINGLE-ACCEPT HANDLER
+  // ATOMIC SINGLE-ACCEPT HANDLER
   const handleAcceptCase = async (caseId: string) => {
     if (!currentUser) {
       setAcceptError("Please log in or create an account to accept rescue cases.");
@@ -319,25 +322,14 @@ function Rescue() {
       });
 
       if (!result.ok) {
-        setAcceptError(result.message ?? "This rescue case has already been accepted.");
+        setAcceptError(result.message ?? "Case already accepted by another volunteer.");
         await loadReports();
         return;
       }
 
-      if (typeof window !== "undefined") {
-        try {
-          const stored = window.localStorage.getItem("bow-user-accepted-case-ids");
-          const ids: string[] = stored ? JSON.parse(stored) : [];
-          if (!ids.includes(caseId)) {
-            window.localStorage.setItem("bow-user-accepted-case-ids", JSON.stringify([...ids, caseId]));
-          }
-        } catch {}
-      }
-
-      setAcceptSuccess(`Case ${caseId} Accepted! You are now the assigned rescue volunteer. BOW Rescue Assist unlocked below.`);
+      setAcceptSuccess(`Case ${caseId} Accepted! Assigned to you. BOW Rescue Assist unlocked below.`);
       await loadReports();
       setSelectedCaseId(caseId);
-      setFilter("MY_CASES");
     } catch (err) {
       setAcceptError(err instanceof Error ? err.message : "Failed to accept case.");
     } finally {
@@ -755,119 +747,130 @@ function Rescue() {
                         Rescue Assignment & Single-Accept Status:
                       </span>
 
-                      {(selectedCase.acceptedBy || selectedCase.acceptedByName) ? (
-                        <div className="space-y-3">
-                          <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-950 space-y-1">
-                            <p className="font-bold text-emerald-900 flex items-center gap-1.5">
-                              <Check className="h-4 w-4 text-emerald-600" />
-                              Case Accepted by {selectedCase.acceptedByName || selectedCase.acceptedBy}
+                      {selectedCase.acceptedBy || selectedCase.acceptedByName ? (
+                        isCaseMine(selectedCase) ? (
+                          <div className="space-y-3">
+                            <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-950 space-y-1">
+                              <p className="font-bold text-emerald-900 flex items-center gap-1.5">
+                                <Check className="h-4 w-4 text-emerald-600" />
+                                Case Accepted by You ({selectedCase.acceptedByName || selectedCase.acceptedBy})
+                              </p>
+                              <p className="text-[0.68rem] text-emerald-800">
+                                Claimed at: {selectedCase.acceptedAt ? new Date(selectedCase.acceptedAt).toLocaleString() : "Recently"}
+                              </p>
+                            </div>
+
+                            <a
+                              href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(selectedCase.location)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-full inline-flex items-center justify-center gap-2 bg-bow-forest text-primary-foreground hover:bg-bow-forest/90 px-4 py-2.5 rounded-xl font-bold text-xs shadow-xs transition-all cursor-pointer"
+                            >
+                              <MapPin className="h-4 w-4 text-amber-300 shrink-0" />
+                              <span>Navigate to Location in Google Maps 🧭</span>
+                              <ExternalLink className="h-3.5 w-3.5 opacity-80" />
+                            </a>
+
+                            {/* 🔓 UNLOCKED AFTER ACCEPTANCE: BOW RESCUE ASSIST ONLY FOR ASSIGNED VOLUNTEER */}
+                            {rescueAssist && (
+                              <div className="rounded-xl border border-emerald-300 bg-emerald-50/95 p-4 sm:p-5 space-y-4 text-emerald-950 shadow-md animate-in fade-in slide-in-from-top-3 duration-300">
+                                {/* Header */}
+                                <div className="flex items-start justify-between border-b border-emerald-200/90 pb-3">
+                                  <div>
+                                    <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-900">
+                                      <Sparkles className="h-4 w-4 text-emerald-600 animate-pulse" />
+                                      <span>BOW RESCUE ASSIST</span>
+                                    </div>
+                                    <p className="text-[0.75rem] font-bold text-emerald-900 mt-0.5">
+                                      Your AI field assistant
+                                    </p>
+                                    <p className="text-[0.68rem] text-emerald-800 font-medium italic">
+                                      Preparation suggestions based on this case report.
+                                    </p>
+                                  </div>
+
+                                  <span className="inline-flex items-center gap-1 text-[0.62rem] font-bold bg-emerald-600 text-white px-2.5 py-0.5 rounded-full shadow-2xs">
+                                    <Sparkles className="h-3 w-3" /> ✨ AI Generated
+                                  </span>
+                                </div>
+
+                                {/* Section 1: 🎒 WHAT TO CARRY */}
+                                <div className="space-y-2">
+                                  <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-900 flex items-center gap-1.5">
+                                    <span>🎒</span> WHAT TO CARRY
+                                  </h4>
+                                  <ul className="space-y-1.5 text-xs leading-relaxed text-emerald-950 font-medium">
+                                    {rescueAssist.carry.map((item, idx) => (
+                                      <li key={idx} className="flex items-start gap-2 bg-white/80 p-2 rounded-md border border-emerald-200/80 shadow-2xs">
+                                        <span className="text-emerald-600 font-bold">•</span>
+                                        <span>{item}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+
+                                {/* Section 2: ⚠️ PRECAUTIONS */}
+                                <div className="space-y-2 pt-2 border-t border-emerald-200/90">
+                                  <h4 className="text-xs font-bold uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
+                                    <span>⚠️</span> PRECAUTIONS
+                                  </h4>
+                                  <ul className="space-y-1.5 text-xs leading-relaxed text-emerald-950 font-medium">
+                                    {rescueAssist.precautions.map((item, idx) => (
+                                      <li key={idx} className="flex items-start gap-2 bg-amber-50/90 p-2 rounded-md border border-amber-200/90 shadow-2xs">
+                                        <span className="text-amber-700 font-bold">•</span>
+                                        <span>{item}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+
+                                {/* Section 3: 🩺 VETERINARY GUIDANCE */}
+                                <div className="space-y-2 pt-2 border-t border-emerald-200/90">
+                                  <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-900 flex items-center gap-1.5">
+                                    <span>🩺</span> VETERINARY GUIDANCE
+                                  </h4>
+                                  <div className="rounded-lg bg-white/95 p-3.5 border border-emerald-200 space-y-1.5 text-xs shadow-2xs">
+                                    <p className="text-emerald-950 font-semibold">{rescueAssist.vetGuidance.summary}</p>
+                                    <p className="font-bold text-emerald-900 bg-emerald-100 p-2 rounded text-[0.72rem] border border-emerald-300 flex items-center gap-1.5">
+                                      <Check className="h-4 w-4 text-emerald-600 shrink-0" />
+                                      <span>{rescueAssist.vetGuidance.recommendation}</span>
+                                    </p>
+                                    <p className="text-[0.7rem] font-semibold text-amber-950 bg-amber-50 p-2 rounded border border-amber-200 flex items-center gap-1.5">
+                                      <span className="text-amber-600 shrink-0">⚠️</span>
+                                      <span>{rescueAssist.vetGuidance.warning}</span>
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {/* Footer Disclaimer & Regenerate Button */}
+                                <div className="border-t border-emerald-200/90 pt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 text-[0.65rem] text-emerald-800">
+                                  <p className="leading-normal italic max-w-xs">
+                                    BOW AI provides assistance based on the reported information. It does not diagnose medical conditions or replace veterinary advice.
+                                  </p>
+
+                                  <button
+                                    type="button"
+                                    disabled={isRegeneratingAssist}
+                                    onClick={() => handleRegenerateAssist()}
+                                    className="inline-flex items-center gap-1 text-[0.68rem] font-bold text-emerald-900 hover:text-emerald-950 bg-emerald-100 hover:bg-emerald-200 px-3 py-1.5 rounded-md border border-emerald-300 transition-colors cursor-pointer shrink-0 disabled:opacity-50"
+                                  >
+                                    <Sparkles className={`h-3.5 w-3.5 text-emerald-700 ${isRegeneratingAssist ? "animate-spin" : ""}`} />
+                                    <span>{isRegeneratingAssist ? "Regenerating..." : "Regenerate Suggestions"}</span>
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="rounded-lg bg-amber-50 border border-amber-200 p-3.5 text-xs text-amber-950 space-y-1">
+                            <p className="font-bold text-amber-900 flex items-center gap-1.5">
+                              <span>⚠️</span> Case Already Assigned
                             </p>
-                            <p className="text-[0.68rem] text-emerald-800">
-                              Claimed at: {selectedCase.acceptedAt ? new Date(selectedCase.acceptedAt).toLocaleString() : "Recently"}
+                            <p className="text-[0.72rem] text-amber-800">
+                              This rescue case has already been accepted by {selectedCase.acceptedByName || selectedCase.acceptedBy}.
                             </p>
                           </div>
-
-                          <a
-                            href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(selectedCase.location)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="w-full inline-flex items-center justify-center gap-2 bg-bow-forest text-primary-foreground hover:bg-bow-forest/90 px-4 py-2.5 rounded-xl font-bold text-xs shadow-xs transition-all cursor-pointer"
-                          >
-                            <MapPin className="h-4 w-4 text-amber-300 shrink-0" />
-                            <span>Navigate to Location in Google Maps 🧭</span>
-                            <ExternalLink className="h-3.5 w-3.5 opacity-80" />
-                          </a>
-
-                          {/* 🔓 UNLOCKED AFTER ACCEPTANCE: BOW RESCUE ASSIST */}
-                          {rescueAssist && (
-                            <div className="rounded-xl border border-emerald-300 bg-emerald-50/95 p-4 sm:p-5 space-y-4 text-emerald-950 shadow-md animate-in fade-in slide-in-from-top-3 duration-300">
-                              {/* Header */}
-                              <div className="flex items-start justify-between border-b border-emerald-200/90 pb-3">
-                                <div>
-                                  <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-900">
-                                    <Sparkles className="h-4 w-4 text-emerald-600 animate-pulse" />
-                                    <span>BOW RESCUE ASSIST</span>
-                                  </div>
-                                  <p className="text-[0.75rem] font-bold text-emerald-900 mt-0.5">
-                                    Your AI field assistant
-                                  </p>
-                                  <p className="text-[0.68rem] text-emerald-800 font-medium italic">
-                                    Preparation suggestions based on this case report.
-                                  </p>
-                                </div>
-
-                                <span className="inline-flex items-center gap-1 text-[0.62rem] font-bold bg-emerald-600 text-white px-2.5 py-0.5 rounded-full shadow-2xs">
-                                  <Sparkles className="h-3 w-3" /> ✨ AI Generated
-                                </span>
-                              </div>
-
-                              {/* Section 1: 🎒 WHAT TO CARRY */}
-                              <div className="space-y-2">
-                                <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-900 flex items-center gap-1.5">
-                                  <span>🎒</span> WHAT TO CARRY
-                                </h4>
-                                <ul className="space-y-1.5 text-xs leading-relaxed text-emerald-950 font-medium">
-                                  {rescueAssist.carry.map((item, idx) => (
-                                    <li key={idx} className="flex items-start gap-2 bg-white/80 p-2 rounded-md border border-emerald-200/80 shadow-2xs">
-                                      <span className="text-emerald-600 font-bold">•</span>
-                                      <span>{item}</span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-
-                              {/* Section 2: ⚠️ PRECAUTIONS */}
-                              <div className="space-y-2 pt-2 border-t border-emerald-200/90">
-                                <h4 className="text-xs font-bold uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
-                                  <span>⚠️</span> PRECAUTIONS
-                                </h4>
-                                <ul className="space-y-1.5 text-xs leading-relaxed text-emerald-950 font-medium">
-                                  {rescueAssist.precautions.map((item, idx) => (
-                                    <li key={idx} className="flex items-start gap-2 bg-amber-50/90 p-2 rounded-md border border-amber-200/90 shadow-2xs">
-                                      <span className="text-amber-700 font-bold">•</span>
-                                      <span>{item}</span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-
-                              {/* Section 3: 🩺 VETERINARY GUIDANCE */}
-                              <div className="space-y-2 pt-2 border-t border-emerald-200/90">
-                                <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-900 flex items-center gap-1.5">
-                                  <span>🩺</span> VETERINARY GUIDANCE
-                                </h4>
-                                <div className="rounded-lg bg-white/95 p-3.5 border border-emerald-200 space-y-1.5 text-xs shadow-2xs">
-                                  <p className="text-emerald-950 font-semibold">{rescueAssist.vetGuidance.summary}</p>
-                                  <p className="font-bold text-emerald-900 bg-emerald-100 p-2 rounded text-[0.72rem] border border-emerald-300 flex items-center gap-1.5">
-                                    <Check className="h-4 w-4 text-emerald-600 shrink-0" />
-                                    <span>{rescueAssist.vetGuidance.recommendation}</span>
-                                  </p>
-                                  <p className="text-[0.7rem] font-semibold text-amber-950 bg-amber-50 p-2 rounded border border-amber-200 flex items-center gap-1.5">
-                                    <span className="text-amber-600 shrink-0">⚠️</span>
-                                    <span>{rescueAssist.vetGuidance.warning}</span>
-                                  </p>
-                                </div>
-                              </div>
-
-                              {/* Footer Disclaimer & Regenerate Button */}
-                              <div className="border-t border-emerald-200/90 pt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 text-[0.65rem] text-emerald-800">
-                                <p className="leading-normal italic max-w-xs">
-                                  BOW AI provides assistance based on the reported information. It does not diagnose medical conditions or replace veterinary advice.
-                                </p>
-
-                                <button
-                                  type="button"
-                                  disabled={isRegeneratingAssist}
-                                  onClick={() => handleRegenerateAssist()}
-                                  className="inline-flex items-center gap-1 text-[0.68rem] font-bold text-emerald-900 hover:text-emerald-950 bg-emerald-100 hover:bg-emerald-200 px-3 py-1.5 rounded-md border border-emerald-300 transition-colors cursor-pointer shrink-0 disabled:opacity-50"
-                                >
-                                  <Sparkles className={`h-3.5 w-3.5 text-emerald-700 ${isRegeneratingAssist ? "animate-spin" : ""}`} />
-                                  <span>{isRegeneratingAssist ? "Regenerating..." : "Regenerate Suggestions"}</span>
-                                </button>
-                              </div>
-                            </div>
-                          )}
-                        </div>
+                        )
                       ) : (
                         <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-950 space-y-2">
                           <p className="font-medium">
@@ -885,12 +888,10 @@ function Rescue() {
                       )}
                     </div>
 
-                    {/* Authorized Status Update Controls for Assigned Volunteer or Rescue Team */}
+                    {/* Authorized Status Update Controls for Assigned Volunteer ONLY */}
                     {currentUser &&
                       selectedCase.acceptedBy &&
-                      (selectedCase.acceptedBy.toLowerCase() === currentUser.email.toLowerCase() ||
-                        currentUser.role === "Rescue Team" ||
-                        currentUser.role === "Admin") && (
+                      isCaseMine(selectedCase) && (
                         <div className="border-t border-border pt-4 space-y-3">
                           <span className="text-[0.68rem] font-semibold text-bow-forest uppercase tracking-wider block">
                             Assigned Volunteer Status Update:

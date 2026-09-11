@@ -679,9 +679,10 @@ export async function acceptRescueCase(input: {
         UPDATE reports
         SET status = 'ACCEPTED', acceptedBy = ?, acceptedByName = ?, acceptedAt = ?, rescueUpdates = ?
         WHERE id = ? 
-          AND (acceptedBy IS NULL OR acceptedBy = '' OR acceptedBy = ?)
+          AND (acceptedBy IS NULL OR acceptedBy = '')
+          AND status IN ('OPEN', 'open', 'Sent to rescue team', 'Reviewed')
       `);
-      const info = stmt.run(userEmail, userName, now, JSON.stringify(updatedRescueUpdates), caseId, userEmail);
+      const info = stmt.run(userEmail, userName, now, JSON.stringify(updatedRescueUpdates), caseId);
       if (info.changes === 0) {
         atomicSuccess = false;
       }
@@ -704,7 +705,8 @@ export async function acceptRescueCase(input: {
           rescueUpdates: JSON.stringify(updatedRescueUpdates),
         })
         .eq("id", caseId)
-        .or(`acceptedBy.is.null,acceptedBy.eq.${userEmail},acceptedBy.eq.""`)
+        .or('acceptedBy.is.null,acceptedBy.eq.""')
+        .in("status", ["OPEN", "open", "Sent to rescue team", "Reviewed"])
         .select();
 
       if (error || !data || data.length === 0) {
