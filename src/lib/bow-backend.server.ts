@@ -317,21 +317,17 @@ export const getProfileServerFn = createServerFn({ method: "POST" })
 
 export const submitReportServerFn = createServerFn({ method: "POST" })
   .validator(
-    (data: {
-      email?: string;
-      location?: string;
-      description?: string;
-      voiceText?: string;
-      concern?: string;
-      imageDataUrl?: string;
-    }) => ({
-      email: String(data?.email ?? "").trim(),
-      location: String(data?.location ?? "").trim(),
-      description: String(data?.description ?? "").trim(),
-      voiceText: String(data?.voiceText ?? "").trim(),
-      concern: String(data?.concern ?? "").trim(),
-      imageDataUrl: String(data?.imageDataUrl ?? "").trim(),
-    }),
+    (data: any) => {
+      const payload = data?.data ?? data;
+      return {
+        email: String(payload?.email ?? "").trim(),
+        location: String(payload?.location ?? "").trim(),
+        description: String(payload?.description ?? "").trim(),
+        voiceText: String(payload?.voiceText ?? "").trim(),
+        concern: String(payload?.concern ?? "").trim(),
+        imageDataUrl: String(payload?.imageDataUrl ?? "").trim(),
+      };
+    },
   )
   .handler(async ({ data }) => submitReport(data));
 
@@ -341,51 +337,53 @@ export const getReportsServerFn = createServerFn({ method: "GET" }).handler(asyn
 
 export const askBowAiServerFn = createServerFn({ method: "POST" })
   .validator(
-    (data: {
-      question: string;
-      cases?: Array<{ id: string; location: string; priority: string; status?: string; createdAt?: string }>;
-    }) => ({
-      question: String(data?.question ?? "").trim(),
-      cases: Array.isArray(data?.cases) ? data.cases : [],
-    }),
+    (data: any) => {
+      const payload = data?.data ?? data;
+      return {
+        question: String(payload?.question ?? "").trim(),
+        cases: Array.isArray(payload?.cases) ? payload.cases : [],
+      };
+    },
   )
   .handler(async ({ data }) => askBowAi({ question: data.question, cases: data.cases }));
 
 export const matchAdoptionDogsServerFn = createServerFn({ method: "POST" })
   .validator(
-    (data: {
-      homeType?: string;
-      familySize?: string;
-      timeAvailable?: string;
-      activityLevel?: string;
-      preferredSize?: string;
-      petExperience?: string;
-    }) => ({
-      homeType: String(data?.homeType ?? "").trim(),
-      familySize: String(data?.familySize ?? "").trim(),
-      timeAvailable: String(data?.timeAvailable ?? "").trim(),
-      activityLevel: String(data?.activityLevel ?? "").trim(),
-      preferredSize: String(data?.preferredSize ?? "").trim(),
-      petExperience: String(data?.petExperience ?? "").trim(),
-    }),
+    (data: any) => {
+      const payload = data?.data ?? data;
+      return {
+        homeType: String(payload?.homeType ?? "").trim(),
+        familySize: String(payload?.familySize ?? "").trim(),
+        timeAvailable: String(payload?.timeAvailable ?? "").trim(),
+        activityLevel: String(payload?.activityLevel ?? "").trim(),
+        preferredSize: String(payload?.preferredSize ?? "").trim(),
+        petExperience: String(payload?.petExperience ?? "").trim(),
+      };
+    },
   )
   .handler(async ({ data }) => matchAdoptionDogs(data));
 
 export const analyzeFoodDonationServerFn = createServerFn({ method: "POST" })
   .validator(
-    (data: { foodType?: string; quantity?: string; location?: string }) => ({
-      foodType: String(data?.foodType ?? "").trim(),
-      quantity: String(data?.quantity ?? "").trim(),
-      location: String(data?.location ?? "").trim(),
-    }),
+    (data: any) => {
+      const payload = data?.data ?? data;
+      return {
+        foodType: String(payload?.foodType ?? "").trim(),
+        quantity: String(payload?.quantity ?? "").trim(),
+        location: String(payload?.location ?? "").trim(),
+      };
+    },
   )
   .handler(async ({ data }) => analyzeFoodDonation(data));
 
 export const generateDogDescriptionServerFn = createServerFn({ method: "POST" })
-  .validator((data: { imageDataUrl?: string; voiceText?: string }) => ({
-    imageDataUrl: String(data?.imageDataUrl ?? "").trim(),
-    voiceText: String(data?.voiceText ?? "").trim(),
-  }))
+  .validator((data: any) => {
+    const payload = data?.data ?? data;
+    return {
+      imageDataUrl: String(payload?.imageDataUrl ?? "").trim(),
+      voiceText: String(payload?.voiceText ?? "").trim(),
+    };
+  })
   .handler(async ({ data }) => generateDogDescription(data));
 
 export const updateReportStatusServerFn = createServerFn({ method: "POST" })
