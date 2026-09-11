@@ -199,7 +199,7 @@ function SiteChrome({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-bow-ivory text-foreground">
       <WelcomeScreen />
-      <header className="sticky top-3 z-50 px-3 sm:px-6 mx-auto max-w-[1400px] transition-all duration-300">
+      <header className="fixed top-2 left-0 right-0 z-50 px-3 sm:px-6 mx-auto max-w-[1400px] transition-all duration-300">
         <div className="flex items-center justify-between gap-3">
           {/* Left Pill: Status & Availability Indicator */}
           <div className="hidden md:flex items-center gap-2 bg-bow-paper/95 backdrop-blur-md border border-border/80 px-4 py-2 rounded-full shadow-md text-xs font-semibold text-foreground">
