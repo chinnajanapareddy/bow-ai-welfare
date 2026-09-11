@@ -669,7 +669,9 @@ export async function acceptRescueCase(input: {
   };
   const updatedRescueUpdates = [...(existing.rescueUpdates ?? []), initialUpdate];
 
-  // 1. Update SQLite if available
+  let atomicSuccess = true;
+
+  // 1. Update SQLite with strict conditional lock
   const db = await getSqliteDb();
   if (db) {
     try {
@@ -679,28 +681,54 @@ export async function acceptRescueCase(input: {
         WHERE id = ? 
           AND (acceptedBy IS NULL OR acceptedBy = '' OR acceptedBy = ?)
       `);
-      stmt.run(userEmail, userName, now, JSON.stringify(updatedRescueUpdates), caseId, userEmail);
+      const info = stmt.run(userEmail, userName, now, JSON.stringify(updatedRescueUpdates), caseId, userEmail);
+      if (info.changes === 0) {
+        atomicSuccess = false;
+      }
     } catch (err) {
       console.warn("SQLite acceptRescueCase error", err);
+      atomicSuccess = false;
     }
   }
 
-  // 2. Update Supabase if enabled
+  // 2. Update Supabase if enabled with conditional lock
   if (DB_MODE === "supabase" && supabase) {
     try {
-      await supabase.from("reports").update({
-        status: "ACCEPTED",
-        acceptedBy: userEmail,
-        acceptedByName: userName,
-        acceptedAt: now,
-        rescueUpdates: JSON.stringify(updatedRescueUpdates),
-      }).eq("id", caseId);
+      const { data, error } = await supabase
+        .from("reports")
+        .update({
+          status: "ACCEPTED",
+          acceptedBy: userEmail,
+          acceptedByName: userName,
+          acceptedAt: now,
+          rescueUpdates: JSON.stringify(updatedRescueUpdates),
+        })
+        .eq("id", caseId)
+        .or(`acceptedBy.is.null,acceptedBy.eq.${userEmail},acceptedBy.eq.""`)
+        .select();
+
+      if (error || !data || data.length === 0) {
+        atomicSuccess = false;
+      }
     } catch (err) {
       console.warn("Supabase acceptRescueCase error", err);
+      atomicSuccess = false;
     }
   }
 
-  // 3. Fallback memory & return latest state
+  // 3. If atomic update failed because another volunteer claimed it first
+  if (!atomicSuccess) {
+    const latest = await getReportById(caseId);
+    const claimedBy = latest?.acceptedByName || latest?.acceptedBy || "another volunteer";
+    return {
+      ok: false,
+      error: "Case Already Accepted",
+      message: `This case has already been accepted by ${claimedBy}.`,
+      report: latest ?? existing,
+    };
+  }
+
+  // 4. Return successful atomic assignment
   const updatedReport: BowReport = {
     ...existing,
     status: "ACCEPTED",
