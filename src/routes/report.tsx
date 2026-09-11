@@ -1,14 +1,8 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  ActionLink,
-  AnalysisResult,
-  BowCard,
-  PageIntro,
-  ReportForm,
-  SectionHeading,
-} from "@/components/bow-ui";
-import { ArrowRight, Check, Mic, ShieldCheck } from "@/components/bow-icons";
+import { ReportForm, AnalysisResult } from "@/components/bow-ui";
+import heroImage from "@/assets/bow-hero.jpg";
+
 export const Route = createFileRoute("/report")({
   head: () => ({
     meta: [
@@ -28,6 +22,7 @@ export const Route = createFileRoute("/report")({
   }),
   component: Report,
 });
+
 function Report() {
   const [analysis, setAnalysis] = useState<{
     priority: "High" | "Medium" | "Low";
@@ -39,69 +34,75 @@ function Report() {
     immediateActions?: string[];
   } | null>(null);
 
-  const voiceSteps = [
-    {
-      Icon: Mic,
-      title: "Press and speak",
-      text: "“There is a dog near the college gate and it looks like it can't walk.”",
-    },
-    {
-      Icon: ArrowRight,
-      title: "Structured context",
-      text: "Dog · Possible mobility issue · College Gate",
-    },
-    {
-      Icon: ShieldCheck,
-      title: "Human assessment",
-      text: "Requires a coordinator or veterinary review",
-    },
-  ];
   return (
-    <main>
-      <PageIntro
-        eyebrow="Report a street soul"
-        title="Your voice can be the first step toward help."
-        body="Share a photo, location, or natural-language voice note. BOW organizes the signal so a human can review it and decide what happens next."
-      />
-      <section className="px-5 py-14 sm:px-10 sm:py-24">
-        <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[1.05fr_0.95fr]">
-          <ReportForm onResult={setAnalysis} />
-          <AnalysisResult analysis={analysis} />
-        </div>
-      </section>
-      <section className="border-y border-border bg-bow-paper px-5 py-16 sm:px-10 sm:py-24">
-        <div className="mx-auto max-w-7xl">
-          <SectionHeading
-            eyebrow="PawCare voice"
-            title="Describe it naturally. We’ll help structure the signal."
-            body="Speak in English, Telugu, Hindi, or Tamil. The prototype turns a voice note into structured context for a human coordinator."
-          />
-          <div className="mt-10 grid gap-4 md:grid-cols-3">
-            {voiceSteps.map(({ Icon, title, text }) => (
-              <BowCard key={title} className="p-6">
-                <Icon className="h-5 w-5 text-bow-brown" />
-                <h3 className="mt-6 font-display text-2xl">{title}</h3>
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">{text}</p>
-              </BowCard>
-            ))}
-          </div>
-        </div>
-      </section>
-      <section className="px-5 py-16 sm:px-10 sm:py-24">
-        <div className="mx-auto max-w-4xl rounded-xl bg-bow-sage/55 p-7 sm:p-10">
-          <div className="flex gap-4">
-            <ShieldCheck className="mt-1 h-5 w-5 shrink-0 text-bow-forest" />
+    <main className="min-h-screen bg-bow-ivory pt-16">
+      <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-10 py-10 lg:py-14">
+        <div className="grid lg:grid-cols-[1fr_1.15fr] gap-10 lg:gap-14 items-start">
+
+          {/* ── LEFT: Editorial storytelling ── */}
+          <div className="flex flex-col gap-8">
             <div>
-              <h3 className="font-display text-3xl">A clear line we never cross.</h3>
-              <p className="mt-3 text-sm leading-6 text-bow-forest/80">
-                BOW AI does not diagnose medical conditions. It can surface visible observations and
-                urgency signals, but a rescue professional or veterinarian should make care
-                decisions.
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-bow-brown mb-4">
+                Report a street soul
+              </p>
+              <h1 className="font-display text-5xl sm:text-6xl leading-[0.93] tracking-[-0.04em] text-foreground">
+                One moment of
+                <br />
+                noticing can
+                <br />
+                <em className="text-bow-forest not-italic">change everything.</em>
+              </h1>
+              <p className="mt-6 max-w-md text-base leading-7 text-muted-foreground">
+                Share what you see and BOW helps turn a concerned citizen's observation
+                into a clear next step for a human rescue team.
               </p>
             </div>
+
+            {/* Hero image */}
+            <div className="relative overflow-hidden rounded-2xl shadow-lg aspect-[4/3] lg:aspect-[3/2]">
+              <img
+                src={heroImage}
+                alt="A gentle street dog resting on a quiet city lane"
+                className="h-full w-full object-cover object-[62%_center]"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-bow-forest/65 via-transparent to-transparent" />
+              <div className="absolute bottom-6 left-6 right-6">
+                <p className="font-display text-2xl italic text-white/90 leading-tight">
+                  A kinder tomorrow,
+                  <br />
+                  together <span className="text-bow-gold">♡</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Impact pillars */}
+            <div className="flex flex-wrap gap-6">
+              {[
+                { emoji: "🐾", title: "Animals Matter", sub: "Every life counts" },
+                { emoji: "🤝", title: "People Care", sub: "Community in action" },
+                { emoji: "🛡️", title: "Safer Communities", sub: "Streets for all beings" },
+              ].map(({ emoji, title, sub }) => (
+                <div key={title} className="flex items-center gap-3">
+                  <span className="grid h-9 w-9 place-items-center rounded-full bg-bow-sand text-base">
+                    {emoji}
+                  </span>
+                  <div>
+                    <p className="text-xs font-bold text-foreground">{title}</p>
+                    <p className="text-[0.7rem] text-muted-foreground">{sub}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
+
+          {/* ── RIGHT: Report form + AI result ── */}
+          <div className="flex flex-col gap-6">
+            <ReportForm onResult={setAnalysis} />
+            {analysis && <AnalysisResult analysis={analysis} />}
+          </div>
+
         </div>
-      </section>
+      </div>
     </main>
   );
 }

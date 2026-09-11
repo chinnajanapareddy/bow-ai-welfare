@@ -715,25 +715,28 @@ function getCurrentPositionPromise(options: PositionOptions): Promise<Geolocatio
   };
 
   return (
-    <BowCard className="p-5 sm:p-7">
-      <div className="flex items-center justify-between">
+    <BowCard className="p-6 sm:p-8 shadow-md">
+      {/* Card header */}
+      <div className="flex items-start justify-between mb-6">
         <div>
-          <p className="font-display text-2xl">Tell us what you see.</p>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="font-display text-3xl sm:text-4xl text-foreground leading-tight">
+            Tell us what you see.
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
             Your report helps a human reach the right street soul.
           </p>
         </div>
-        <span className="grid h-10 w-10 place-items-center rounded-full bg-bow-sand text-bow-forest">
-          <PawPrint className="h-5 w-5" />
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-bow-sand text-bow-forest ml-4">
+          <Sparkles className="h-5 w-5" />
         </span>
       </div>
-      <div className="mt-6 grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2">
         {!imagePreview ? (
           <div className="sm:col-span-2 space-y-2">
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*,video/*"
+              accept="image/*"
               className="sr-only"
               onChange={handleImageChange}
             />
@@ -776,7 +779,7 @@ function getCurrentPositionPromise(options: PositionOptions): Promise<Geolocatio
                 <div>
                   <strong className="block text-sm font-bold text-foreground">Upload from Gallery 🖼️</strong>
                   <span className="text-[0.7rem] text-muted-foreground block">
-                    Select existing photo or video file
+                    Select existing photo from gallery
                   </span>
                 </div>
               </button>
@@ -904,38 +907,25 @@ function getCurrentPositionPromise(options: PositionOptions): Promise<Geolocatio
         </div>
       </div>
 
-      <div className="mt-4 flex items-center gap-3">
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          aria-label={recording ? "Stop voice report" : "Record a voice report"}
-          onClick={handleVoiceToggle}
-          className={cn("h-11 w-11 rounded-full", recording && "border-bow-brown text-bow-brown animate-pulse")}
-        >
-          <Mic className="h-4 w-4" />
-        </Button>
-        <span className="text-xs text-muted-foreground">
-          {recording ? "Listening... speak naturally" : "Add a voice report"}
-        </span>
+      <div className="mt-5">
         <Button
           type="button"
           disabled={submitting}
-          className="ml-auto h-11 rounded-lg px-5 text-xs font-semibold bg-bow-forest text-primary-foreground hover:bg-bow-forest/90 cursor-pointer disabled:opacity-70"
+          className="w-full h-12 rounded-xl text-sm font-bold bg-bow-forest text-primary-foreground hover:bg-bow-forest/90 cursor-pointer disabled:opacity-70 shadow-sm"
           onClick={handleSubmit}
         >
           {submitting ? (
-            <span className="flex items-center gap-1.5">
+            <span className="flex items-center justify-center gap-2">
               <Sparkles className="h-4 w-4 animate-spin text-amber-300" />
               <span>Submitting to Rescue Team...</span>
             </span>
           ) : submitted ? (
-            <span className="flex items-center gap-1.5 text-emerald-300">
+            <span className="flex items-center justify-center gap-2 text-emerald-300">
               <Check className="h-4 w-4" />
               <span>Report Submitted to Rescue Team ✓</span>
             </span>
           ) : (
-            <span className="flex items-center gap-1.5">
+            <span className="flex items-center justify-center gap-2">
               <span>Submit Report</span>
               <ArrowRight className="h-4 w-4" />
             </span>
