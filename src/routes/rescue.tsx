@@ -67,6 +67,68 @@ function getTimeAgo(dateString: string) {
   }
 }
 
+function generateRescueAssistSuggestions(report: {
+  description: string;
+  concern?: string;
+  priority: string;
+  indicators?: string[];
+}) {
+  const text = `${report.description ?? ""} ${report.concern ?? ""} ${(report.indicators ?? []).join(" ")}`.toLowerCase();
+
+  const isInjury = /(injur|bleed|wound|cut|hit|accident|blood|trauma|bite|pain)/i.test(text);
+  const isMobility = /(limp|walk|weak|cannot|can't|standing|leg|broken|paralyzed|collapse|sluggish)/i.test(text);
+  const isNutritional = /(hungry|thin|skinny|food|starv|malnourish|feed|eat|stray)/i.test(text);
+  const isFrightened = /(scared|afraid|timid|aggressive|bark|fear|shy|hiding|nervous)/i.test(text);
+
+  const carry: string[] = [
+    "Protective gloves",
+    "Fresh drinking water & portable bowl",
+  ];
+
+  if (isInjury || isMobility) {
+    carry.push("Sterile / clean gauze");
+    carry.push("Clean towel / blanket");
+    carry.push("Suitable transport support (stretcher / crate)");
+  } else {
+    carry.push("Clean towel or blanket");
+  }
+
+  if (isNutritional) {
+    carry.push("Unseasoned boiled rice / kibble or high-value treats");
+  } else {
+    carry.push("Gentle coaxing treats for safe approach");
+  }
+
+  carry.push("Soft adjustable slip lead / leash");
+
+  const precautions: string[] = [
+    "Approach slowly and avoid sudden movements.",
+    "Observe body language for signs of fear or defensive posture.",
+  ];
+
+  if (isInjury || isMobility) {
+    precautions.push("Do not force the dog to walk.");
+    precautions.push("Avoid unnecessary contact with the wound or pain areas.");
+  }
+
+  if (isFrightened) {
+    precautions.push("Keep a safe distance if the dog appears frightened or aggressive.");
+  }
+
+  precautions.push("Keep the dog away from traffic when it is safe to do so.");
+  precautions.push("Contact an experienced rescuer or veterinarian when necessary.");
+
+  const vetGuidance = {
+    summary: isInjury || isMobility
+      ? "Possible injury or mobility limitation detected from the report."
+      : "Field welfare assessment recommended upon volunteer arrival.",
+    recommendation: "Veterinary assessment recommended.",
+    warning: "Do not administer medication without veterinary guidance.",
+  };
+
+  return { carry, precautions, vetGuidance };
+}
+
 function Rescue() {
   const getReports = useServerFn(getReportsServerFn);
   const askBowAiFn = useServerFn(askBowAiServerFn);
@@ -88,6 +150,10 @@ function Rescue() {
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const [acceptError, setAcceptError] = useState<string | null>(null);
   const [acceptSuccess, setAcceptSuccess] = useState<string | null>(null);
+
+  // Rescue Assist AI state
+  const [isRegeneratingAssist, setIsRegeneratingAssist] = useState(false);
+  const [assistVersion, setAssistVersion] = useState(0);
 
   const [updateNote, setUpdateNote] = useState("");
   const [updatingStatus, setUpdatingStatus] = useState(false);
@@ -191,6 +257,24 @@ function Rescue() {
     }
     return filteredQueue[0] ?? queue[0];
   }, [queue, filteredQueue, selectedCaseId]);
+
+  const rescueAssist = useMemo(() => {
+    if (!selectedCase) return null;
+    return generateRescueAssistSuggestions({
+      description: selectedCase.description,
+      concern: selectedCase.concern,
+      priority: selectedCase.priority,
+      indicators: selectedCase.indicators,
+    });
+  }, [selectedCase, assistVersion]);
+
+  const handleRegenerateAssist = () => {
+    setIsRegeneratingAssist(true);
+    setTimeout(() => {
+      setAssistVersion((v) => v + 1);
+      setIsRegeneratingAssist(false);
+    }, 500);
+  };
 
   // CRITICAL SINGLE-ACCEPT HANDLER
   const handleAcceptCase = async (caseId: string) => {
@@ -620,7 +704,7 @@ function Rescue() {
                       </span>
 
                       {(selectedCase.acceptedBy || selectedCase.acceptedByName) ? (
-                        <div className="space-y-2.5">
+                        <div className="space-y-3">
                           <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-950 space-y-1">
                             <p className="font-bold text-emerald-900 flex items-center gap-1.5">
                               <Check className="h-4 w-4 text-emerald-600" />
@@ -641,6 +725,96 @@ function Rescue() {
                             <span>Navigate to Location in Google Maps 🧭</span>
                             <ExternalLink className="h-3.5 w-3.5 opacity-80" />
                           </a>
+
+                          {/* 🔓 UNLOCKED AFTER ACCEPTANCE: BOW RESCUE ASSIST */}
+                          {rescueAssist && (
+                            <div className="rounded-xl border border-emerald-300 bg-emerald-50/95 p-4 sm:p-5 space-y-4 text-emerald-950 shadow-md animate-in fade-in slide-in-from-top-3 duration-300">
+                              {/* Header */}
+                              <div className="flex items-start justify-between border-b border-emerald-200/90 pb-3">
+                                <div>
+                                  <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-900">
+                                    <Sparkles className="h-4 w-4 text-emerald-600 animate-pulse" />
+                                    <span>BOW RESCUE ASSIST</span>
+                                  </div>
+                                  <p className="text-[0.75rem] font-bold text-emerald-900 mt-0.5">
+                                    Your AI field assistant
+                                  </p>
+                                  <p className="text-[0.68rem] text-emerald-800 font-medium italic">
+                                    Preparation suggestions based on this case report.
+                                  </p>
+                                </div>
+
+                                <span className="inline-flex items-center gap-1 text-[0.62rem] font-bold bg-emerald-600 text-white px-2.5 py-0.5 rounded-full shadow-2xs">
+                                  <Sparkles className="h-3 w-3" /> ✨ AI Generated
+                                </span>
+                              </div>
+
+                              {/* Section 1: 🎒 WHAT TO CARRY */}
+                              <div className="space-y-2">
+                                <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-900 flex items-center gap-1.5">
+                                  <span>🎒</span> WHAT TO CARRY
+                                </h4>
+                                <ul className="space-y-1.5 text-xs leading-relaxed text-emerald-950 font-medium">
+                                  {rescueAssist.carry.map((item, idx) => (
+                                    <li key={idx} className="flex items-start gap-2 bg-white/80 p-2 rounded-md border border-emerald-200/80 shadow-2xs">
+                                      <span className="text-emerald-600 font-bold">•</span>
+                                      <span>{item}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+
+                              {/* Section 2: ⚠️ PRECAUTIONS */}
+                              <div className="space-y-2 pt-2 border-t border-emerald-200/90">
+                                <h4 className="text-xs font-bold uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
+                                  <span>⚠️</span> PRECAUTIONS
+                                </h4>
+                                <ul className="space-y-1.5 text-xs leading-relaxed text-emerald-950 font-medium">
+                                  {rescueAssist.precautions.map((item, idx) => (
+                                    <li key={idx} className="flex items-start gap-2 bg-amber-50/90 p-2 rounded-md border border-amber-200/90 shadow-2xs">
+                                      <span className="text-amber-700 font-bold">•</span>
+                                      <span>{item}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+
+                              {/* Section 3: 🩺 VETERINARY GUIDANCE */}
+                              <div className="space-y-2 pt-2 border-t border-emerald-200/90">
+                                <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-900 flex items-center gap-1.5">
+                                  <span>🩺</span> VETERINARY GUIDANCE
+                                </h4>
+                                <div className="rounded-lg bg-white/95 p-3.5 border border-emerald-200 space-y-1.5 text-xs shadow-2xs">
+                                  <p className="text-emerald-950 font-semibold">{rescueAssist.vetGuidance.summary}</p>
+                                  <p className="font-bold text-emerald-900 bg-emerald-100 p-2 rounded text-[0.72rem] border border-emerald-300 flex items-center gap-1.5">
+                                    <Check className="h-4 w-4 text-emerald-600 shrink-0" />
+                                    <span>{rescueAssist.vetGuidance.recommendation}</span>
+                                  </p>
+                                  <p className="text-[0.7rem] font-semibold text-amber-950 bg-amber-50 p-2 rounded border border-amber-200 flex items-center gap-1.5">
+                                    <span className="text-amber-600 shrink-0">⚠️</span>
+                                    <span>{rescueAssist.vetGuidance.warning}</span>
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Footer Disclaimer & Regenerate Button */}
+                              <div className="border-t border-emerald-200/90 pt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 text-[0.65rem] text-emerald-800">
+                                <p className="leading-normal italic max-w-xs">
+                                  BOW AI provides assistance based on the reported information. It does not diagnose medical conditions or replace veterinary advice.
+                                </p>
+
+                                <button
+                                  type="button"
+                                  disabled={isRegeneratingAssist}
+                                  onClick={() => handleRegenerateAssist()}
+                                  className="inline-flex items-center gap-1 text-[0.68rem] font-bold text-emerald-900 hover:text-emerald-950 bg-emerald-100 hover:bg-emerald-200 px-3 py-1.5 rounded-md border border-emerald-300 transition-colors cursor-pointer shrink-0 disabled:opacity-50"
+                                >
+                                  <Sparkles className={`h-3.5 w-3.5 text-emerald-700 ${isRegeneratingAssist ? "animate-spin" : ""}`} />
+                                  <span>{isRegeneratingAssist ? "Regenerating..." : "Regenerate Suggestions"}</span>
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-950 space-y-2">
