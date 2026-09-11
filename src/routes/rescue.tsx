@@ -216,35 +216,11 @@ function Rescue() {
   }, []);
 
   const queue = useMemo(() => {
-    if (reports.length > 0) {
-      return reports.map((r) => ({
-        ...r,
-        timeAgo: getTimeAgo(r.createdAt),
-        displayStatus: r.status || "OPEN",
-      }));
-    }
-
-    return cases.map((c) => ({
-      id: c.id,
-      location: c.location,
-      description: "Street dog requires medical assessment and volunteer care.",
-      priority: c.priority as any,
-      status: c.status || "OPEN",
-      displayStatus: c.status || "OPEN",
-      createdAt: new Date().toISOString(),
-      timeAgo: "15m ago",
-      email: "community@bow.org",
-      imageUrl: c.imageUrl,
-      confidence: 94,
-      indicators: ["Mobility issue detected", "Posture anomaly", "Location confirmed"],
-      whyPriority: "Assigned based on visual cues and incident urgency.",
-      immediateActions: ["Offer clean water", "Keep a safe distance"],
-      rescueUpdates: [],
-      acceptedBy: undefined as string | undefined,
-      acceptedByName: undefined as string | undefined,
-      acceptedAt: undefined as string | undefined,
+    return reports.map((r) => ({
+      ...r,
+      timeAgo: getTimeAgo(r.createdAt),
+      displayStatus: r.status || "OPEN",
     }));
-
   }, [reports]);
 
   // STRICT DATABASE OWNERSHIP CHECK - No localStorage, No hardcoding, No selectedCaseId override
