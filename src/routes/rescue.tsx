@@ -334,10 +334,9 @@ function Rescue() {
         } catch {}
       }
 
-      setAcceptSuccess(`Case ${caseId} Accepted! You are now the assigned rescue volunteer. Turn-by-turn navigation is ready.`);
+      setAcceptSuccess(`Case ${caseId} Accepted! You are now the assigned rescue volunteer. BOW Rescue Assist unlocked below.`);
       await loadReports();
       setSelectedCaseId(caseId);
-      setFilter("MY_CASES");
     } catch (err) {
       setAcceptError(err instanceof Error ? err.message : "Failed to accept case.");
     } finally {
