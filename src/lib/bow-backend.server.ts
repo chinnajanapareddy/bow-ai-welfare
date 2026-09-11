@@ -208,7 +208,10 @@ export async function submitReport(input: {
   voiceText?: string;
   concern?: string;
   imageDataUrl?: string;
+  imageUrl?: string;
+  imagePreview?: string;
 }) {
+  const userPhoto = (input.imageDataUrl || input.imageUrl || input.imagePreview || "").trim();
   const payload = {
     email: normalizeEmail(input.email ?? "hello@bow.org"),
     location: (input.location ?? "Location Not Provided").trim() || "Location Not Provided",
@@ -217,7 +220,7 @@ export async function submitReport(input: {
       "Street dog appears to need support.",
     voiceText: (input.voiceText ?? "").trim(),
     concern: (input.concern ?? "Possible mobility issue").trim() || "Possible mobility issue",
-    imageDataUrl: (input.imageDataUrl ?? "").trim(),
+    imageDataUrl: userPhoto,
   };
 
   const insight = await analyzeDogReport(payload);
@@ -231,8 +234,8 @@ export async function submitReport(input: {
   ];
   const charSum = reportId.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
   const chosenPhoto =
-    payload.imageDataUrl && payload.imageDataUrl.length > 0
-      ? payload.imageDataUrl
+    userPhoto.length > 10
+      ? userPhoto
       : defaultDogPhotos[Math.abs(charSum) % defaultDogPhotos.length];
 
   const report: BowReport = {

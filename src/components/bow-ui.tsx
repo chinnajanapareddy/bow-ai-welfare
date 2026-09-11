@@ -137,38 +137,57 @@ export function BowCard({
 
 function compressImageForAi(dataUrl: string, maxDim = 600): Promise<string> {
   return new Promise((resolve) => {
-    if (!dataUrl || !dataUrl.startsWith("data:")) {
-      resolve(dataUrl);
+    if (!dataUrl || typeof dataUrl !== "string") {
+      resolve(dataUrl ?? "");
       return;
     }
-    const img = new Image();
-    img.onload = () => {
-      let width = img.width;
-      let height = img.height;
 
-      if (width > maxDim || height > maxDim) {
-        if (width > height) {
-          height = Math.round((height * maxDim) / width);
-          width = maxDim;
-        } else {
-          width = Math.round((width * maxDim) / height);
-          height = maxDim;
+    const processImgSrc = (src: string) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
         }
-      }
 
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL("image/jpeg", 0.65));
-      } else {
-        resolve(dataUrl);
-      }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", 0.55));
+        } else {
+          resolve(src);
+        }
+      };
+      img.onerror = () => resolve(src);
+      img.src = src;
     };
-    img.onerror = () => resolve(dataUrl);
-    img.src = dataUrl;
+
+    if (dataUrl.startsWith("blob:")) {
+      fetch(dataUrl)
+        .then((res) => res.blob())
+        .then((blob) => {
+          const reader = new FileReader();
+          reader.onload = () => processImgSrc(String(reader.result));
+          reader.onerror = () => resolve(dataUrl);
+          reader.readAsDataURL(blob);
+        })
+        .catch(() => resolve(dataUrl));
+      return;
+    }
+
+    processImgSrc(dataUrl);
   });
 }
 
@@ -561,8 +580,8 @@ function getCurrentPositionPromise(options: PositionOptions): Promise<Geolocatio
     setSubmitting(true);
     try {
       const imageToSend = imagePreview
-        ? (await compressImageForAi(imagePreview, 800)) || imagePreview
-        : undefined;
+        ? (await compressImageForAi(imagePreview, 600)) || imagePreview
+        : "";
 
       const userEmail =
         (typeof window !== "undefined"
@@ -576,7 +595,7 @@ function getCurrentPositionPromise(options: PositionOptions): Promise<Geolocatio
           description: trimmedDescription,
           voiceText: voiceText || trimmedDescription,
           concern: voiceText ? "Possible mobility issue" : "Needs review",
-          ...(imageToSend ? { imageDataUrl: imageToSend } : {}),
+          imageDataUrl: imageToSend || imagePreview || "",
         },
       });
 
@@ -614,7 +633,14 @@ function getCurrentPositionPromise(options: PositionOptions): Promise<Geolocatio
         };
 
         if (result.report) {
-          setLastReport(result.report);
+          const reportWithUserPhoto = {
+            ...result.report,
+            imageUrl:
+              (imageToSend && imageToSend.length > 20) || (imagePreview && imagePreview.length > 20)
+                ? imageToSend || imagePreview!
+                : result.report.imageUrl,
+          };
+          setLastReport(reportWithUserPhoto);
         }
         setSubmitted(true);
         setError("");
