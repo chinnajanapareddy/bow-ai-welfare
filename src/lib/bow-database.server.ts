@@ -50,6 +50,7 @@ const defaultDbPath =
 export const DB_PATH = defaultDbPath;
 
 let sqliteDb: any = null;
+const serverMemoryReports = new Map<string, BowReport>();
 
 async function getSqliteDb() {
   if (sqliteDb) {
@@ -310,7 +311,7 @@ export async function getAllUsers(): Promise<BowUser[]> {
 }
 
 export async function getAllReports(): Promise<BowReport[]> {
-  const reportMap = new Map<string, BowReport>();
+  const reportMap = new Map<string, BowReport>(serverMemoryReports);
 
   const db = await getSqliteDb();
   if (db) {
@@ -319,6 +320,7 @@ export async function getAllReports(): Promise<BowReport[]> {
       for (const r of rows) {
         const rep = mapReportRow(r);
         reportMap.set(rep.id, rep);
+        serverMemoryReports.set(rep.id, rep);
       }
     } catch {}
   }
@@ -334,9 +336,12 @@ export async function getAllReports(): Promise<BowReport[]> {
           const rep = mapReportRow(r);
           if (!reportMap.has(rep.id)) {
             reportMap.set(rep.id, rep);
+            serverMemoryReports.set(rep.id, rep);
           } else {
             const existing = reportMap.get(rep.id)!;
-            reportMap.set(rep.id, { ...existing, ...rep });
+            const merged = { ...existing, ...rep };
+            reportMap.set(rep.id, merged);
+            serverMemoryReports.set(rep.id, merged);
           }
         }
       }
@@ -429,6 +434,8 @@ export async function createReport(report: BowReport): Promise<BowReport> {
     ],
   };
 
+  serverMemoryReports.set(safeReport.id, safeReport);
+
   const db = await getSqliteDb();
   if (db) {
     try {
@@ -498,6 +505,11 @@ export async function createReport(report: BowReport): Promise<BowReport> {
 }
 
 export async function updateReportStatus(id: string, status: string): Promise<boolean> {
+  const existing = serverMemoryReports.get(id);
+  if (existing) {
+    serverMemoryReports.set(id, { ...existing, status });
+  }
+
   const db = await getSqliteDb();
   if (db) {
     try {
@@ -515,6 +527,9 @@ export async function updateReportStatus(id: string, status: string): Promise<bo
 }
 
 export async function getReportById(id: string): Promise<BowReport | null> {
+  const memory = serverMemoryReports.get(id);
+  if (memory) return memory;
+
   const reports = await getAllReports();
   return reports.find((r) => r.id === id) ?? null;
 }
@@ -539,7 +554,7 @@ export async function acceptRescueCase(input: {
     const newReport: BowReport = {
       id: caseId,
       email: "community@bow.org",
-      location: "Community Location, Chennai",
+      location: "Community Location",
       description: "Street dog requires medical assessment and volunteer care.",
       priority: "Medium",
       status: "OPEN",
@@ -579,68 +594,6 @@ export async function acceptRescueCase(input: {
   };
   const updatedRescueUpdates = [...(existing.rescueUpdates ?? []), initialUpdate];
 
-  let atomicSuccess = true;
-
-  // 1. Update SQLite with strict conditional lock
-  const db = await getSqliteDb();
-  if (db) {
-    try {
-      const stmt = db.prepare(`
-        UPDATE reports
-        SET status = 'ACCEPTED', acceptedBy = ?, acceptedByName = ?, acceptedAt = ?, rescueUpdates = ?
-        WHERE id = ? 
-          AND (acceptedBy IS NULL OR acceptedBy = '')
-          AND status IN ('OPEN', 'open', 'Sent to rescue team', 'Reviewed')
-      `);
-      const info = stmt.run(userEmail, userName, now, JSON.stringify(updatedRescueUpdates), caseId);
-      if (info.changes === 0) {
-        atomicSuccess = false;
-      }
-    } catch (err) {
-      console.warn("SQLite acceptRescueCase error", err);
-      atomicSuccess = false;
-    }
-  }
-
-  // 2. Update Supabase if enabled with conditional lock
-  if (DB_MODE === "supabase" && supabase) {
-    try {
-      const { data, error } = await supabase
-        .from("reports")
-        .update({
-          status: "ACCEPTED",
-          acceptedBy: userEmail,
-          acceptedByName: userName,
-          acceptedAt: now,
-          rescueUpdates: JSON.stringify(updatedRescueUpdates),
-        })
-        .eq("id", caseId)
-        .or('acceptedBy.is.null,acceptedBy.eq.""')
-        .in("status", ["OPEN", "open", "Sent to rescue team", "Reviewed"])
-        .select();
-
-      if (error || !data || data.length === 0) {
-        atomicSuccess = false;
-      }
-    } catch (err) {
-      console.warn("Supabase acceptRescueCase error", err);
-      atomicSuccess = false;
-    }
-  }
-
-  // 3. If atomic update failed because another volunteer claimed it first
-  if (!atomicSuccess) {
-    const latest = await getReportById(caseId);
-    const claimedBy = latest?.acceptedByName || latest?.acceptedBy || "another volunteer";
-    return {
-      ok: false,
-      error: "Case Already Accepted",
-      message: `This case has already been accepted by ${claimedBy}.`,
-      report: latest ?? existing,
-    };
-  }
-
-  // 4. Return successful atomic assignment
   const updatedReport: BowReport = {
     ...existing,
     status: "ACCEPTED",
@@ -649,6 +602,41 @@ export async function acceptRescueCase(input: {
     acceptedAt: now,
     rescueUpdates: updatedRescueUpdates,
   };
+
+  // 1. Update server memory map first
+  serverMemoryReports.set(caseId, updatedReport);
+
+  // 2. Update SQLite if available
+  const db = await getSqliteDb();
+  if (db) {
+    try {
+      db.prepare(`
+        UPDATE reports
+        SET status = 'ACCEPTED', acceptedBy = ?, acceptedByName = ?, acceptedAt = ?, rescueUpdates = ?
+        WHERE id = ? 
+      `).run(userEmail, userName, now, JSON.stringify(updatedRescueUpdates), caseId);
+    } catch (err) {
+      console.warn("SQLite acceptRescueCase error", err);
+    }
+  }
+
+  // 3. Update Supabase if enabled
+  if (DB_MODE === "supabase" && supabase) {
+    try {
+      await supabase
+        .from("reports")
+        .update({
+          status: "ACCEPTED",
+          acceptedBy: userEmail,
+          acceptedByName: userName,
+          acceptedAt: now,
+          rescueUpdates: JSON.stringify(updatedRescueUpdates),
+        })
+        .eq("id", caseId);
+    } catch (err) {
+      console.warn("Supabase acceptRescueCase error", err);
+    }
+  }
 
   return {
     ok: true,
@@ -797,7 +785,8 @@ export async function getLiveSystemStats(): Promise<{
 }
 
 export async function clearAllReports(): Promise<{ ok: boolean; count: number }> {
-  let count = 0;
+  let count = serverMemoryReports.size;
+  serverMemoryReports.clear();
   const db = await getSqliteDb();
   if (db) {
     try {
