@@ -224,6 +224,32 @@ function Rescue() {
 
   }, [reports]);
 
+  const isCaseMine = (c: { acceptedBy?: string; acceptedByName?: string; id: string }) => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = window.localStorage.getItem("bow-user-accepted-case-ids");
+        if (stored) {
+          const ids: string[] = JSON.parse(stored);
+          if (ids.includes(c.id)) return true;
+        }
+      } catch {}
+    }
+    if (selectedCaseId === c.id && c.acceptedBy) return true;
+    if (!currentUser) return Boolean(c.acceptedBy);
+
+    const userEmail = (currentUser.email || "").toLowerCase().trim();
+    const userName = (currentUser.name || "").toLowerCase().trim();
+    const accBy = (c.acceptedBy || "").toLowerCase().trim();
+    const accByName = (c.acceptedByName || "").toLowerCase().trim();
+
+    if (!accBy && !accByName) return false;
+
+    return (
+      (accBy.length > 0 && (accBy === userEmail || accBy === userName)) ||
+      (accByName.length > 0 && (accByName === userName || accByName === userEmail))
+    );
+  };
+
   const filteredQueue = useMemo(() => {
     if (filter === "OPEN") {
       return queue.filter(
@@ -233,11 +259,7 @@ function Rescue() {
       );
     }
     if (filter === "MY_CASES") {
-      if (!currentUser) return [];
-      return queue.filter(
-        (c) =>
-          c.acceptedBy && c.acceptedBy.toLowerCase() === currentUser.email.toLowerCase(),
-      );
+      return queue.filter((c) => isCaseMine(c));
     }
     if (filter === "RESOLVED") {
       return queue.filter(
@@ -248,7 +270,7 @@ function Rescue() {
       );
     }
     return queue;
-  }, [queue, filter, currentUser]);
+  }, [queue, filter, currentUser, selectedCaseId]);
 
   const selectedCase = useMemo(() => {
     if (selectedCaseId) {
@@ -300,6 +322,16 @@ function Rescue() {
         setAcceptError(result.message ?? "This rescue case has already been accepted.");
         await loadReports();
         return;
+      }
+
+      if (typeof window !== "undefined") {
+        try {
+          const stored = window.localStorage.getItem("bow-user-accepted-case-ids");
+          const ids: string[] = stored ? JSON.parse(stored) : [];
+          if (!ids.includes(caseId)) {
+            window.localStorage.setItem("bow-user-accepted-case-ids", JSON.stringify([...ids, caseId]));
+          }
+        } catch {}
       }
 
       setAcceptSuccess(`Case ${caseId} Accepted! You are now the assigned rescue volunteer. Turn-by-turn navigation is ready.`);
@@ -495,7 +527,7 @@ function Rescue() {
                 {filteredQueue.map((item) => {
                   const isOpen = !item.acceptedBy && ["OPEN", "Sent to rescue team", "Reviewed"].includes(item.displayStatus);
                   const isAccepted = item.displayStatus === "ACCEPTED" || item.displayStatus === "RESCUE_IN_PROGRESS";
-                  const isMine = currentUser && item.acceptedBy && item.acceptedBy.toLowerCase() === currentUser.email.toLowerCase();
+                  const isMine = isCaseMine(item);
 
                   return (
                     <BowCard
@@ -615,6 +647,26 @@ function Rescue() {
                     </BowCard>
                   );
                 })}
+
+                {filteredQueue.length === 0 && (
+                  <BowCard className="p-8 text-center text-muted-foreground space-y-3">
+                    <p className="font-display text-xl text-foreground">No cases matching "{filter}"</p>
+                    <p className="text-xs max-w-sm mx-auto leading-relaxed">
+                      {filter === "MY_CASES"
+                        ? "You haven't accepted any rescue cases yet. Select 'Available Open Cases' to browse and accept."
+                        : "No rescue cases currently match this category."}
+                    </p>
+                    {filter === "MY_CASES" && (
+                      <Button
+                        size="sm"
+                        onClick={() => setFilter("OPEN")}
+                        className="mt-2 text-xs bg-bow-forest text-primary-foreground font-semibold rounded-lg"
+                      >
+                        Browse Available Open Cases →
+                      </Button>
+                    )}
+                  </BowCard>
+                )}
               </div>
             </div>
 
